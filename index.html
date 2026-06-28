@@ -84,8 +84,7 @@
         <p class="menu-subtitle">인공지능 로봇과 올바른 관계 맺기 시뮬레이터</p>
         <div class="menu-buttons">
           <button class="btn-primary" id="btn-start">시작하기</button>
-          <button class="btn-primary btn-continue hidden" id="btn-continue">이어서 하기 ▶</button>
-          <button class="btn-secondary" id="btn-guide">사용 가이드</button>
+<button class="btn-secondary" id="btn-guide">사용 가이드</button>
           <button class="btn-secondary" id="btn-teacher-menu">📋 교사용 가이드</button>
         </div>
         <div class="achievement-badge">성취기준 [6도02-03] 기반</div>
@@ -108,15 +107,15 @@
           <div class="avatar-face">🤖</div>
         </div>
         <div class="noa-bubble">
-          <p>안녕! <br />먼저 네 이름을 알려줄 수 있어?</p>
+          <p id="i1-bubble">안녕! <br />먼저 네 이름을 알려줄 수 있어?</p>
         </div>
         <div class="input-group">
-          <label for="input-name">나의 이름</label>
+          <label for="input-name" id="i1-name-lbl">나의 이름</label>
           <input type="text" id="input-name" placeholder="이름을 입력하세요" maxlength="10" autocomplete="off" />
-          <span class="input-hint">최대 10자</span>
+          <span class="input-hint" id="i1-hint">최대 10자</span>
         </div>
         <div class="input-group">
-          <label>나의 성별</label>
+          <label id="i1-gender-lbl">나의 성별</label>
           <div class="gender-btn-group">
             <button type="button" class="btn-gender active" id="btn-gender-m" data-gender="남">남성 ♂</button>
             <button type="button" class="btn-gender" id="btn-gender-f" data-gender="여">여성 ♀</button>
@@ -145,7 +144,7 @@
           <p id="input2-greeting">잘 부탁해! 그런데 하나만 더 물어볼게.</p>
         </div>
         <div class="friend-def-container">
-          <p class="friend-def-prompt">
+          <p class="friend-def-prompt" id="i2-prompt1">
             나에게 <strong>친구</strong>란
           </p>
           <div class="friend-def-row">
@@ -154,7 +153,7 @@
               class="inline-input" />
             <span class="bracket">"</span>
           </div>
-          <p class="friend-def-prompt mt-sm">
+          <p class="friend-def-prompt mt-sm" id="i2-prompt2">
             이다. 왜냐하면
           </p>
           <div class="friend-def-row">
@@ -162,9 +161,9 @@
             <input type="text" id="input-friend-reason" placeholder="그 이유" maxlength="30" autocomplete="off"
               class="inline-input wide-input" />
             <span class="bracket">"</span>
-            <span class="suffix"> 때문이다.</span>
+            <span class="suffix" id="i2-suffix"> 때문이다.</span>
           </div>
-          <p class="spoiler-hint">※ 이 대답은 나중에 중요한 순간에 다시 등장합니다.</p>
+          <p class="spoiler-hint" id="i2-spoiler">※ 이 대답은 나중에 중요한 순간에 다시 등장합니다.</p>
         </div>
         <div class="input2-buttons">
           <button class="btn-secondary small" id="btn-input2-back">← 이전</button>
@@ -219,6 +218,9 @@
     ───────────────────────────────────────── -->
     <div id="screen-game" class="screen">
 
+      <!-- 배경 이미지 — 전체 화면 커버 (대화창 뒤까지) -->
+      <div id="game-bg-illustration"></div>
+
       <!-- Chapter 2 red filter (절대 좌표 배경 레이어) -->
       <div id="ch2-filter"></div>
 
@@ -226,23 +228,14 @@
       <div id="game-hud">
         <div id="hud-ch" class="hud-badge ch1">CHAPTER 1</div>
         <div id="hud-day-badge" class="hud-day-badge">DAY ?</div>
-        <div id="hud-gauges">
-          <div class="hud-gauge-item" id="gauge-affinity-wrap">
-            <span class="hud-g-icon">❤️</span>
-            <span class="hud-g-name">친밀도</span>
-            <div class="hud-g-track">
-              <div id="hud-g-fill-affinity" class="hud-g-fill"></div>
-            </div>
-            <span id="hud-g-pct-affinity" class="hud-g-pct">0%</span>
-          </div>
-          <div class="hud-gauge-item" id="gauge-moral-wrap">
-            <span id="hud-g-icon-moral" class="hud-g-icon">⚡</span>
-            <span id="hud-g-name-moral" class="hud-g-name">효율성</span>
-            <div class="hud-g-track">
-              <div id="hud-g-fill-moral" class="hud-g-fill"></div>
-            </div>
-            <span id="hud-g-pct-moral" class="hud-g-pct">0%</span>
-          </div>
+        <!-- 뱃지 & 히스토리 버튼 (친밀도/효율성 게이지 대체) -->
+        <div id="hud-center-btns">
+          <button id="hud-badge-btn" class="hud-icon-btn" title="챕터 뱃지 컬렉션">
+            <span class="hib-icon">🏅</span><span class="hib-label">뱃지</span>
+          </button>
+          <button id="hud-history-btn" class="hud-icon-btn" title="히스토리">
+            <span class="hib-icon">📜</span><span class="hib-label">HISTORY</span>
+          </button>
         </div>
         <div id="hud-right-col">
           <div id="hud-day-num">Day 1</div>
@@ -250,9 +243,8 @@
         </div>
       </div>
 
-      <!-- Visual Novel Stage (Full-screen background and screen-filling character) -->
+      <!-- Visual Novel Stage (character only — background is full-screen sibling above) -->
       <div id="game-visual-panel">
-        <div id="game-bg-illustration"></div>
         <div id="game-character-sprite-container">
           <div id="game-character-sprite-wrap">
             <div id="noah-exclaim" aria-label="대화 계속">!</div>
@@ -300,6 +292,8 @@
 
       <!-- 대화창 + 선택지 (하단 고정) -->
       <div id="game-dlg-wrap">
+        <!-- 캐릭터 초상화 (선생님/채원/동혁 발화 시 표시) -->
+        <div id="dlg-portrait-wrap"><img id="dlg-portrait-img" alt="" /></div>
         <div id="game-dlg-box">
           <span id="dlg-speaker-tag"></span>
           <div id="dlg-text-area"></div>
@@ -310,6 +304,59 @@
         <div id="game-choice-wrap" style="display:none">
           <p class="choice-prompt-text">어떻게 할까요?</p>
           <div id="choice-btn-list"></div>
+        </div>
+      </div>
+
+      <!-- ── 뱃지 컬렉션 패널 ── -->
+      <div id="badge-panel" class="side-panel hidden">
+        <div class="side-panel-header">
+          <span>🏅 챕터 뱃지</span>
+          <button id="badge-panel-close" class="panel-close-btn">✕</button>
+        </div>
+        <div id="badge-grid">
+          <div class="badge-item locked" id="badge-item-1">
+            <div class="badge-img-wrap">
+              <img src="assets/image/badge_ch1.png" alt="CH1 뱃지" class="badge-img" />
+              <div class="badge-lock-overlay">🔒</div>
+            </div>
+            <div class="badge-ch-tag">CHAPTER 1</div>
+            <div class="badge-name">공존의 시작</div>
+          </div>
+          <div class="badge-item locked" id="badge-item-2">
+            <div class="badge-img-wrap">
+              <img src="assets/image/badge_ch2.png" alt="CH2 뱃지" class="badge-img" />
+              <div class="badge-lock-overlay">🔒</div>
+            </div>
+            <div class="badge-ch-tag">CHAPTER 2</div>
+            <div class="badge-name">균열의 기억</div>
+          </div>
+          <div class="badge-item locked" id="badge-item-3">
+            <div class="badge-img-wrap">
+              <img src="assets/image/badge_ch3.png" alt="CH3 뱃지" class="badge-img" />
+              <div class="badge-lock-overlay">🔒</div>
+            </div>
+            <div class="badge-ch-tag">CHAPTER 3</div>
+            <div class="badge-name">회복의 여정</div>
+          </div>
+          <div class="badge-item locked" id="badge-item-4">
+            <div class="badge-img-wrap">
+              <img src="assets/image/badge_ch4.png" alt="CH4 뱃지" class="badge-img" />
+              <div class="badge-lock-overlay">🔒</div>
+            </div>
+            <div class="badge-ch-tag">CHAPTER 4</div>
+            <div class="badge-name">상생의 완성</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 히스토리 패널 ── -->
+      <div id="history-panel" class="side-panel hidden">
+        <div class="side-panel-header">
+          <span>📜 진행 과정</span>
+          <button id="history-panel-close" class="panel-close-btn">✕</button>
+        </div>
+        <div id="history-list">
+          <p class="history-empty">아직 기록이 없습니다.</p>
         </div>
       </div>
 
@@ -485,22 +532,22 @@
         <h2 class="settings-title">⚙ 설정</h2>
 
         <div class="settings-group">
-          <span class="settings-label">🔊 효과음</span>
+          <span class="settings-label" id="lbl-sfx">🔊 효과음</span>
           <button class="toggle-switch on" id="tg-sfx" role="switch" aria-checked="true"><span class="toggle-knob"></span></button>
         </div>
 
         <div class="settings-group">
-          <span class="settings-label">🎵 배경 음악</span>
+          <span class="settings-label" id="lbl-bgm">🎵 배경 음악</span>
           <button class="toggle-switch on" id="tg-bgm" role="switch" aria-checked="true"><span class="toggle-knob"></span></button>
         </div>
 
         <div class="settings-group">
-          <span class="settings-label">🗣️ 대사 읽어주기</span>
+          <span class="settings-label" id="lbl-tts">🗣️ 대사 읽어주기</span>
           <button class="toggle-switch" id="tg-tts" role="switch" aria-checked="false"><span class="toggle-knob"></span></button>
         </div>
 
         <div class="settings-group column">
-          <span class="settings-label">🔤 글자 크기</span>
+          <span class="settings-label" id="lbl-font">🔤 글자 크기</span>
           <div class="seg-control" id="seg-fontsize">
             <button data-fs="sm">작게</button>
             <button data-fs="md" class="active">보통</button>
@@ -509,8 +556,18 @@
         </div>
 
         <div class="settings-group">
-          <span class="settings-label">👁️ 고대비(색약) 모드</span>
+          <span class="settings-label" id="lbl-contrast">👁️ 고대비(색약) 모드</span>
           <button class="toggle-switch" id="tg-contrast" role="switch" aria-checked="false"><span class="toggle-knob"></span></button>
+        </div>
+
+        <div class="settings-group column">
+          <span class="settings-label">🌐 언어 / Language</span>
+          <div class="seg-control seg-lang" id="seg-lang">
+            <button data-lang="ko" class="active">한국어</button>
+            <button data-lang="en">English</button>
+            <button data-lang="zh">中文</button>
+            <button data-lang="ru">Рус.</button>
+          </div>
         </div>
 
         <div class="settings-divider"></div>

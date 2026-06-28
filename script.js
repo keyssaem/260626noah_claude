@@ -729,9 +729,205 @@ const state = {
   reflect1:          '', // 챕터1 성찰
   reflect2:          '', // 챕터2 성찰
   reflect3:          '', // 챕터3 성찰
+  earnedBadges:      [], // [1,2,3,4] 수집된 챕터 번호
+  visitedDays:       [], // [{dayId, chapter, title}] 방문 기록
+  lang:              'ko', // 'ko' | 'en' | 'zh' | 'ru'
 };
 
 let currentScreen = 'screen-intro';
+
+/* ══════════════════════════════════════════
+   MULTILINGUAL SUPPORT
+══════════════════════════════════════════ */
+const LANG_STRINGS = {
+  ko: {
+    tts_lang: 'ko-KR',
+    menu_badge: '6학년 도덕 몰입형 체험',
+    menu_t1: 'AI 전학생', menu_t3: '와 함께하는', menu_t4: '공존·상생 프로젝트',
+    menu_sub: '인공지능 로봇과 올바른 관계 맺기 시뮬레이터',
+    btn_start: '시작하기', btn_guide: '사용 가이드', btn_teacher: '📋 교사용 가이드',
+    menu_achieve: '성취기준 [6도02-03] 기반',
+    settings_title: '⚙ 설정',
+    s_sfx: '🔊 효과음', s_bgm: '🎵 배경 음악', s_tts: '🗣️ 대사 읽어주기',
+    s_font: '🔤 글자 크기', s_sm: '작게', s_md: '보통', s_lg: '크게',
+    s_contrast: '👁️ 고대비(색약) 모드',
+    s_teacher: '📋 교사용 가이드 보기', s_reset: '🗑️ 진행 기록 초기화',
+    s_foot: '성취기준 [6도02-03] · 공존·상생 프로젝트 v2.0',
+    i1_bubble: '안녕! <br />먼저 네 이름을 알려줄 수 있어?',
+    i1_name: '나의 이름', i1_ph: '이름을 입력하세요', i1_hint: '최대 10자',
+    i1_gender: '나의 성별', g_m: '남성 ♂', g_f: '여성 ♀', btn_next: '다음으로 →',
+    i2_bubble: '잘 부탁해! 그런데 하나만 더 물어볼게.',
+    i2_p1: '나에게 ', i2_friend: '친구', i2_p1b: '란',
+    i2_p2: '이다. 왜냐하면',
+    i2_ph_def: '어떤 존재', i2_ph_why: '그 이유', i2_suffix: ' 때문이다.',
+    i2_spoiler: '※ 이 대답은 나중에 중요한 순간에 다시 등장합니다.',
+    btn_back: '← 이전', btn_adv: '모험 시작! →',
+    hib_badge: '뱃지', hib_history: 'HISTORY',
+    bp_title: '🏅 챕터 뱃지', hp_title: '📜 진행 과정',
+    b1: '공존의 시작', b2: '균열의 기억', b3: '회복의 여정', b4: '상생의 완성',
+    hist_empty: '아직 기록이 없습니다.',
+    rel_title: '🔗 지금, 나와 노아의 관계는?',
+    rel_aff: '❤️ 친밀도', rel_res: '💚 존중·도덕', rel_close: '확인',
+  },
+  en: {
+    tts_lang: 'ko-KR',
+    menu_badge: 'Grade 6 Ethics Immersive Experience',
+    menu_t1: 'AI Transfer Student', menu_t3: 'Journey With', menu_t4: 'Coexistence Project',
+    menu_sub: 'Simulator for Building Right Relationships with AI Robots',
+    btn_start: 'Start', btn_guide: 'User Guide', btn_teacher: '📋 Teacher\'s Guide',
+    menu_achieve: 'Based on Standard [6Do02-03]',
+    settings_title: '⚙ Settings',
+    s_sfx: '🔊 Sound Effects', s_bgm: '🎵 Background Music', s_tts: '🗣️ Read Lines Aloud',
+    s_font: '🔤 Font Size', s_sm: 'Small', s_md: 'Medium', s_lg: 'Large',
+    s_contrast: '👁️ High Contrast Mode',
+    s_teacher: '📋 View Teacher\'s Guide', s_reset: '🗑️ Reset Progress',
+    s_foot: '[6Do02-03] · Coexistence Project v2.0',
+    i1_bubble: 'Hi! <br />Can you tell me your name first?',
+    i1_name: 'My Name', i1_ph: 'Enter your name', i1_hint: 'Max 10 chars',
+    i1_gender: 'My Gender', g_m: 'Male ♂', g_f: 'Female ♀', btn_next: 'Next →',
+    i2_bubble: 'Nice to meet you! One more question.',
+    i2_p1: 'To me, a ', i2_friend: 'friend', i2_p1b: ' is',
+    i2_p2: 'Because',
+    i2_ph_def: 'someone who...', i2_ph_why: 'the reason', i2_suffix: '.',
+    i2_spoiler: '※ This answer will appear again at an important moment.',
+    btn_back: '← Back', btn_adv: 'Start Adventure! →',
+    hib_badge: 'Badge', hib_history: 'HISTORY',
+    bp_title: '🏅 Chapter Badges', hp_title: '📜 History',
+    b1: 'Beginning of Coexistence', b2: 'Memory of Fracture',
+    b3: 'Journey of Recovery', b4: 'Mutual Flourishing',
+    hist_empty: 'No records yet.',
+    rel_title: '🔗 My Relationship with Noah',
+    rel_aff: '❤️ Affinity', rel_res: '💚 Respect & Ethics', rel_close: 'OK',
+  },
+  zh: {
+    tts_lang: 'ko-KR',
+    menu_badge: '六年级道德沉浸式体验',
+    menu_t1: 'AI转学生', menu_t3: '的共同', menu_t4: '共存·共生项目',
+    menu_sub: '与AI机器人建立正确关系的模拟器',
+    btn_start: '开始', btn_guide: '使用指南', btn_teacher: '📋 教师指南',
+    menu_achieve: '基于成就标准 [6도02-03]',
+    settings_title: '⚙ 设置',
+    s_sfx: '🔊 音效', s_bgm: '🎵 背景音乐', s_tts: '🗣️ 朗读台词',
+    s_font: '🔤 字体大小', s_sm: '小', s_md: '中', s_lg: '大',
+    s_contrast: '👁️ 高对比度模式',
+    s_teacher: '📋 查看教师指南', s_reset: '🗑️ 重置进度',
+    s_foot: '[6도02-03] · 共存·共生项目 v2.0',
+    i1_bubble: '你好！<br />能先告诉我你的名字吗？',
+    i1_name: '我的名字', i1_ph: '请输入姓名', i1_hint: '最多10个字',
+    i1_gender: '我的性别', g_m: '男 ♂', g_f: '女 ♀', btn_next: '下一步 →',
+    i2_bubble: '请多关照！我还想再问一个问题。',
+    i2_p1: '对我来说，', i2_friend: '朋友', i2_p1b: '是',
+    i2_p2: '因为',
+    i2_ph_def: '某种存在', i2_ph_why: '原因', i2_suffix: '。',
+    i2_spoiler: '※ 这个答案将在重要时刻再次出现。',
+    btn_back: '← 返回', btn_adv: '开始冒险！→',
+    hib_badge: '徽章', hib_history: '历史',
+    bp_title: '🏅 章节徽章', hp_title: '📜 历史记录',
+    b1: '共存的开始', b2: '裂痕的记忆', b3: '恢复的旅程', b4: '共生的完成',
+    hist_empty: '暂无记录。',
+    rel_title: '🔗 我与诺亚的关系',
+    rel_aff: '❤️ 亲密度', rel_res: '💚 尊重·道德', rel_close: '确认',
+  },
+  ru: {
+    tts_lang: 'ko-KR',
+    menu_badge: 'Погружение в этику — 6 класс',
+    menu_t1: 'ИИ-новичок', menu_t3: 'Путешествие с', menu_t4: 'Проект Сосуществования',
+    menu_sub: 'Симулятор правильных отношений с роботом ИИ',
+    btn_start: 'Начать', btn_guide: 'Руководство', btn_teacher: '📋 Для учителя',
+    menu_achieve: 'На основе стандарта [6Do02-03]',
+    settings_title: '⚙ Настройки',
+    s_sfx: '🔊 Звуки', s_bgm: '🎵 Музыка', s_tts: '🗣️ Читать вслух',
+    s_font: '🔤 Размер шрифта', s_sm: 'Мал.', s_md: 'Сред.', s_lg: 'Бол.',
+    s_contrast: '👁️ Высокий контраст',
+    s_teacher: '📋 Руководство учителя', s_reset: '🗑️ Сбросить прогресс',
+    s_foot: '[6Do02-03] · Проект Сосуществования v2.0',
+    i1_bubble: 'Привет! <br />Как тебя зовут?',
+    i1_name: 'Моё имя', i1_ph: 'Введите имя', i1_hint: 'Макс. 10 зн.',
+    i1_gender: 'Мой пол', g_m: 'Муж. ♂', g_f: 'Жен. ♀', btn_next: 'Далее →',
+    i2_bubble: 'Приятно познакомиться! Ещё один вопрос.',
+    i2_p1: 'Для меня ', i2_friend: 'друг', i2_p1b: ' — это',
+    i2_p2: 'Потому что',
+    i2_ph_def: 'тот, кто...', i2_ph_why: 'причина', i2_suffix: '.',
+    i2_spoiler: '※ Этот ответ появится снова в важный момент.',
+    btn_back: '← Назад', btn_adv: 'Начать приключение! →',
+    hib_badge: 'Значок', hib_history: 'ИСТОРИЯ',
+    bp_title: '🏅 Значки глав', hp_title: '📜 История',
+    b1: 'Начало Сосуществования', b2: 'Память о Разломе',
+    b3: 'Путь Восстановления', b4: 'Взаимный Расцвет',
+    hist_empty: 'Записей пока нет.',
+    rel_title: '🔗 Мои отношения с Ноа',
+    rel_aff: '❤️ Близость', rel_res: '💚 Уважение и мораль', rel_close: 'ОК',
+  },
+};
+
+function applyLang(code) {
+  const L = LANG_STRINGS[code] || LANG_STRINGS.ko;
+  state.lang = code;
+
+  const s  = (id, t)   => { const e = document.getElementById(id); if (e) e.textContent = t; };
+  const q  = (sel, t)  => { const e = document.querySelector(sel); if (e) e.textContent = t; };
+  const qh = (sel, h)  => { const e = document.querySelector(sel); if (e) e.innerHTML = h; };
+  const ph = (id, t)   => { const e = document.getElementById(id); if (e) e.placeholder = t; };
+
+  // Menu
+  q('.logo-badge', L.menu_badge);
+  q('.title-line1', L.menu_t1);
+  q('.title-line3', L.menu_t3);
+  q('.title-line4', L.menu_t4);
+  q('.menu-subtitle', L.menu_sub);
+  s('btn-start', L.btn_start);
+  s('btn-guide', L.btn_guide);
+  s('btn-teacher-menu', L.btn_teacher);
+  q('.achievement-badge', L.menu_achieve);
+
+  // Settings
+  q('.settings-title', L.settings_title);
+  s('lbl-sfx', L.s_sfx); s('lbl-bgm', L.s_bgm); s('lbl-tts', L.s_tts);
+  s('lbl-font', L.s_font); s('lbl-contrast', L.s_contrast);
+  q('[data-fs="sm"]', L.s_sm); q('[data-fs="md"]', L.s_md); q('[data-fs="lg"]', L.s_lg);
+  s('btn-open-teacher', L.s_teacher); s('btn-reset-progress', L.s_reset);
+  q('.settings-foot', L.s_foot);
+
+  // Input 1
+  qh('#i1-bubble', L.i1_bubble);
+  s('i1-name-lbl', L.i1_name); ph('input-name', L.i1_ph);
+  s('i1-hint', L.i1_hint); s('i1-gender-lbl', L.i1_gender);
+  s('btn-gender-m', L.g_m); s('btn-gender-f', L.g_f);
+  s('btn-input1-next', L.btn_next);
+
+  // Input 2
+  s('input2-greeting', L.i2_bubble);
+  qh('#i2-prompt1', L.i2_p1 + '<strong>' + L.i2_friend + '</strong>' + L.i2_p1b);
+  q('#i2-prompt2', L.i2_p2);
+  ph('input-friend-def', L.i2_ph_def); ph('input-friend-reason', L.i2_ph_why);
+  q('#i2-suffix', L.i2_suffix);
+  q('#i2-spoiler', L.i2_spoiler);
+  s('btn-input2-back', L.btn_back); s('btn-input2-start', L.btn_adv);
+
+  // HUD
+  q('#hud-badge-btn .hib-label', L.hib_badge);
+  q('#hud-history-btn .hib-label', L.hib_history);
+
+  // Side panels
+  qh('#badge-panel .side-panel-header span', L.bp_title);
+  qh('#history-panel .side-panel-header span', L.hp_title);
+  q('#badge-item-1 .badge-name', L.b1); q('#badge-item-2 .badge-name', L.b2);
+  q('#badge-item-3 .badge-name', L.b3); q('#badge-item-4 .badge-name', L.b4);
+  const hempty = document.querySelector('#history-list .history-empty');
+  if (hempty) hempty.textContent = L.hist_empty;
+
+  // Relation overlay
+  q('.relation-title', L.rel_title);
+  q('.relation-axis-row:nth-child(1) .relation-axis-lbl', L.rel_aff);
+  q('.relation-axis-row:nth-child(2) .relation-axis-lbl', L.rel_res);
+  s('btn-relation-ok', L.rel_close);
+
+  // Lang selector sync + 저장
+  document.querySelectorAll('#seg-lang button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === code);
+  });
+  localStorage.setItem('lang', code);
+}
 
 /* ──────────────────────────────────────────
    SCREEN ROUTER
@@ -789,13 +985,13 @@ function showScreen(toId) {
     playMenuBgm();
   }
 
-  /* 오버레이 항상 숨김 — 클릭 유도 없음 */
+  /* 오버레이 항상 숨김 */
   clickOv.style.display = 'none';
 
-  /* 즉시 자동재생 시도 */
+  /* 즉시 자동재생 시도 — 차단 시 음소거 후 재시도 */
   video.play().catch(() => {
-    /* 재생 실패 시 조용히 메뉴로 */
-    goToMenu();
+    video.muted = true;
+    video.play().catch(() => { goToMenu(); });
   });
 
   /* 영상 종료 → 메뉴 */
@@ -817,9 +1013,8 @@ function showScreen(toId) {
     goToMenu();
   });
 
-  /* 게임 시작/이어하기 시 BGM 정지 */
+  /* 게임 시작 시 BGM 정지 */
   document.getElementById('btn-start').addEventListener('click', stopMenuBgm, { capture: true });
-  document.getElementById('btn-continue').addEventListener('click', stopMenuBgm, { capture: true });
 })();
 
 /* ── MAIN MENU ── */
@@ -907,48 +1102,6 @@ const G = {
   moralRevealed:   false // 챕터2 도덕성 게이지 공개 여부
 };
 
-/* ──────────────────────────────────────────
-   SAVE / CONTINUE (localStorage 자동 저장)
-   ────────────────────────────────────────── */
-const SAVE_KEY = 'noah_save';
-function saveProgress() {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({
-      dayId: G.dayId, affinity: G.affinity, effGauge: G.effGauge,
-      moralGauge: G.moralGauge, respect: G.respect, mistakes: G.mistakes,
-      moralRevealed: G.moralRevealed,
-      state: state, ts: Date.now()
-    }));
-  } catch (e) {}
-}
-function hasSave() {
-  try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; }
-}
-function clearSave() {
-  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
-}
-function loadProgress() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return false;
-    const d = JSON.parse(raw);
-    G.affinity = d.affinity; G.effGauge = d.effGauge;
-    G.moralGauge = d.moralGauge;
-    G.respect = (typeof d.respect === 'number') ? d.respect : 50;
-    G.mistakes = d.mistakes || 0;
-    G.moralRevealed = d.moralRevealed || false;
-    Object.assign(state, d.state || {});
-    // 이어하기 시 도덕성이 이미 공개된 상태라면 즉시 표시
-    if (G.moralRevealed) {
-      const row = document.getElementById('rsb-moral-row');
-      row.classList.remove('rsb-moral-hidden');
-      row.classList.add('rsb-moral-reveal');
-    }
-    showScreen('screen-game');
-    loadDay(d.dayId || 1);
-    return true;
-  } catch (e) { return false; }
-}
 
 function getDayObj(dayId) {
   return scenarioData.days.find(d => d.dayId === dayId);
@@ -989,40 +1142,124 @@ function applyRespect(type) {
   G.respect = Math.max(0, Math.min(100, G.respect + d));
 }
 
-function updateHUD(chapter) {
-  const fillAffinity = document.getElementById('hud-g-fill-affinity');
-  const pctAffinity = document.getElementById('hud-g-pct-affinity');
-  
-  const iconMoral = document.getElementById('hud-g-icon-moral');
-  const nameMoral = document.getElementById('hud-g-name-moral');
-  const fillMoral = document.getElementById('hud-g-fill-moral');
-  const pctMoral = document.getElementById('hud-g-pct-moral');
-
-  // 1. Affinity Gauge Update
-  fillAffinity.style.background = 'linear-gradient(90deg, #ff7597, #f07caa)';
-  fillAffinity.style.width = G.affinity + '%';
-  pctAffinity.textContent = G.affinity + '%';
-
-  // 2. Secondary Gauge Update (Eff in Ch1, Moral in Ch2+)
-  if (chapter === 1) {
-    iconMoral.textContent = '⚡';
-    nameMoral.textContent = '효율성';
-    fillMoral.style.background = 'linear-gradient(90deg, #7c6df0, #7cc5f0)';
-    fillMoral.style.width = G.effGauge + '%';
-    pctMoral.textContent = G.effGauge + '%';
-  } else {
-    iconMoral.textContent = '💚';
-    nameMoral.textContent = '도덕성';
-    fillMoral.style.background = 'linear-gradient(90deg, #5ef0a0, #7cc5f0)';
-    fillMoral.style.width = G.moralGauge + '%';
-    pctMoral.textContent = G.moralGauge + '%';
-  }
-
-  // 3. Day Text (ignoring sub-days decimals)
+function updateHUD() {
   document.getElementById('hud-day-num').textContent = `Day ${Math.floor(G.dayId)}`;
-
-  // 4. 관계 사이드바 동기화
   updateRelationSidebar();
+}
+
+/* ══════════════════════════════════════════
+   BADGE SYSTEM
+══════════════════════════════════════════ */
+// 챕터 완료 기준: 해당 챕터보다 높은 챕터에 진입 시 이전 챕터 뱃지 획득
+// Ch4 뱃지는 엔딩(dayId 30.5) 도달 시 획득
+function checkBadgeUnlock(chapter, dayId) {
+  // 챕터 전환 뱃지 (이전 챕터 완료 시)
+  const prevCh = chapter - 1;
+  if (prevCh >= 1 && !state.earnedBadges.includes(prevCh)) {
+    earnBadge(prevCh);
+  }
+  // Chapter 4 뱃지: Day 30.5(엔딩) 도달 시
+  if (dayId === 30.5 && !state.earnedBadges.includes(4)) {
+    earnBadge(4);
+  }
+}
+
+function earnBadge(chNum) {
+  if (state.earnedBadges.includes(chNum)) return;
+  state.earnedBadges.push(chNum);
+  renderBadgePanel();
+  // 뱃지 획득 토스트 알림
+  showBadgeToast(chNum);
+}
+
+function renderBadgePanel() {
+  for (let i = 1; i <= 4; i++) {
+    const item = document.getElementById(`badge-item-${i}`);
+    if (!item) continue;
+    if (state.earnedBadges.includes(i)) {
+      item.classList.remove('locked');
+      item.classList.add('unlocked');
+    }
+  }
+}
+
+function showBadgeToast(chNum) {
+  const toast = document.createElement('div');
+  toast.className = 'badge-toast';
+  toast.innerHTML = `🏅 CHAPTER ${chNum} 뱃지 획득!`;
+  document.getElementById('screen-game').appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 2800);
+}
+
+/* ══════════════════════════════════════════
+   HISTORY SYSTEM
+══════════════════════════════════════════ */
+const MAIN_DAY_IDS = new Set([
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  11, 12, 13, 14, 15, 16, 17, 18,
+  19, 20, 21, 22, 23, 24, 25, 26,
+  27, 28, 29, 30, 30.5
+]);
+
+function addToHistory(dayObj) {
+  // 서브데이(1.2, 1.7 등) 제외, 중복 방지
+  if (!MAIN_DAY_IDS.has(dayObj.dayId)) return;
+  if (state.visitedDays.some(d => d.dayId === dayObj.dayId)) return;
+  state.visitedDays.push({
+    dayId: dayObj.dayId,
+    chapter: dayObj.chapter,
+    title: dayObj.title || `Day ${dayObj.dayId}`,
+  });
+  renderHistoryPanel();
+}
+
+function renderHistoryPanel() {
+  const list = document.getElementById('history-list');
+  if (!list) return;
+  if (state.visitedDays.length === 0) {
+    list.innerHTML = '<p class="history-empty">아직 기록이 없습니다.</p>';
+    return;
+  }
+  // 챕터별로 그루핑하여 표시
+  const byChapter = {};
+  [...state.visitedDays]
+    .sort((a, b) => a.dayId - b.dayId)
+    .forEach(d => {
+      if (!byChapter[d.chapter]) byChapter[d.chapter] = [];
+      byChapter[d.chapter].push(d);
+    });
+
+  let html = '';
+  for (const ch of Object.keys(byChapter).sort((a,b) => +a - +b)) {
+    html += `<div class="history-ch-divider">CHAPTER ${ch}</div>`;
+    for (const d of byChapter[ch]) {
+      const label = d.title.replace(/^Day[\s\d.]+:\s*/, '');
+      const dayLabel = d.dayId === 30.5 ? 'Day 30 (후기)' : `Day ${d.dayId}`;
+      html += `<button class="history-day-btn" data-dayid="${d.dayId}">
+        <span class="hist-day-num">${dayLabel}</span>
+        <span class="hist-day-title">${label}</span>
+      </button>`;
+    }
+  }
+  list.innerHTML = html;
+
+  // 클릭 → 해당 Day로 이동
+  list.querySelectorAll('.history-day-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const did = parseFloat(btn.dataset.dayid);
+      closeAllPanels();
+      loadDay(did);
+    });
+  });
+}
+
+function closeAllPanels() {
+  document.getElementById('badge-panel').classList.add('hidden');
+  document.getElementById('history-panel').classList.add('hidden');
 }
 
 /* ──────────────────────────────────────────
@@ -1477,11 +1714,9 @@ function setBackground(bgKey) {
 }
 
 /* ══ Noah Sprite State System ══════════════════════════════════════
-   5×2 sprite sheet (noah_animal.jpg / noah_car.jpg)
-   Row 1: Col1=idle  Col2=error  Col4=think  Col5=idea
-   Row 2: Col2=sad   Col4=greet  Col5=sleep
-   CSS classes (.state-*) control background-position.
-   Inline style is cleared so CSS specificity wins.
+   human  : 단일 스프라이트 시트(5×2) → background-position으로 셀 선택
+   animal : noah_animals/split_{row}_{col}.png 개별 파일
+   car    : noah_cars/split_{row}_{col}.png    개별 파일
 ═══════════════════════════════════════════════════════════════════ */
 const Noah = (() => {
   const ALL_STATES = [
@@ -1489,29 +1724,69 @@ const Noah = (() => {
     'state-sad','state-greet','state-sleep',
   ];
 
-  // Old JSON emotion names → new state names (alias map)
   const ALIAS = {
     neutral:  'idle',   talking:  'idle',
     happy:    'idea',   thinking: 'think',
     surprised:'error',  sad:      'sad',
     crying:   'sad',    waving:   'greet',
     sleeping: 'sleep',
-    // New names pass through directly
     idle:'idle', error:'error', think:'think',
     idea:'idea', greet:'greet', sleep:'sleep',
   };
 
+  // human: 5×2 스프라이트 시트 background-position
+  const HUMAN_POS = {
+    idle:'0% 0%', idea:'25% 0%', think:'75% 0%',
+    error:'0% 100%', sad:'25% 100%', greet:'75% 100%', sleep:'100% 100%',
+  };
+
+  // animal/car: 감정 → 개별 파일 경로
+  const EMOTION_FILES = {
+    animal: {
+      idle:  'assets/image/noah_animals/split_0_0.png',
+      error: 'assets/image/noah_animals/split_0_1.png',
+      idea:  'assets/image/noah_animals/split_0_2.png',
+      think: 'assets/image/noah_animals/split_0_3.png',
+      greet: 'assets/image/noah_animals/split_1_3.png',
+      sad:   'assets/image/noah_animals/split_1_1.png',
+      sleep: 'assets/image/noah_animals/split_1_4.png',
+    },
+    car: {
+      idle:  'assets/image/noah_cars/split_0_0.png',
+      idea:  'assets/image/noah_cars/split_1_2.png',
+      think: 'assets/image/noah_cars/split_0_3.png',
+      error: 'assets/image/noah_cars/split_1_1.png',
+      greet: 'assets/image/noah_cars/split_0_2.png',
+      sad:   'assets/image/noah_cars/split_1_3.png',
+      sleep: 'assets/image/noah_cars/split_1_4.png',
+    },
+  };
+
+  let activeDesign = 'human';
+
+  function setDesign(d) { activeDesign = d || 'human'; }
+
   function setEmotion(name) {
     const sprite = document.getElementById('game-character-sprite');
     if (!sprite) return;
-    // Clear inline backgroundPosition so CSS class wins
-    sprite.style.backgroundPosition = '';
-    const state = ALIAS[name] || 'idle';
+    const emotionName = ALIAS[name] || 'idle';
     sprite.classList.remove(...ALL_STATES);
-    sprite.classList.add(`state-${state}`);
+
+    if (EMOTION_FILES[activeDesign]) {
+      // animal / car: 개별 파일 직접 로드
+      const files = EMOTION_FILES[activeDesign];
+      const file  = files[emotionName] || files.idle;
+      sprite.style.backgroundImage    = `url('${file}')`;
+      sprite.style.backgroundSize     = 'contain';
+      sprite.style.backgroundPosition = 'center bottom';
+    } else {
+      // human: 스프라이트 시트 position 이동
+      sprite.style.backgroundSize     = '500% 200%';
+      sprite.style.backgroundPosition = HUMAN_POS[emotionName] || '0% 0%';
+    }
   }
 
-  return { setEmotion };
+  return { setEmotion, setDesign };
 })();
 
 // Backward-compat: old call sites still work
@@ -1539,11 +1814,18 @@ function setCharacter(charKey) {
   const applySprite = () => {
     if (charKey === 'silhouette') {
       sprite.style.backgroundImage = "url('assets/image/noah_human.png')";
+      sprite.style.backgroundSize  = '500% 200%';
       sprite.classList.add('silhouette');
+    } else if (design === 'human') {
+      sprite.style.backgroundImage = "url('assets/image/noah_human.png')";
+      sprite.style.backgroundSize  = '500% 200%';
+      sprite.classList.remove('silhouette');
     } else {
-      sprite.style.backgroundImage = `url('assets/image/noah_${state.selectedDesign}.png')`;
+      // animal / car: 개별 파일 — setEmotion이 backgroundImage 담당
+      sprite.style.backgroundImage = '';
       sprite.classList.remove('silhouette');
     }
+    Noah.setDesign(design);
     Noah.setEmotion('idle');
     updateExclaimBottom(design);
     sprite.style.transition = 'opacity 0.25s ease';
@@ -1552,9 +1834,9 @@ function setCharacter(charKey) {
 
   const wasVisible = container.classList.contains('visible');
   const prevImg    = sprite.style.backgroundImage;
-  const nextImg    = charKey === 'silhouette'
+  const nextImg    = (charKey === 'silhouette' || design === 'human')
     ? "url('assets/image/noah_human.png')"
-    : `url('assets/image/noah_${state.selectedDesign}.png')`;
+    : `url('assets/image/noah_${design}_idle')`; // 개별파일 — 항상 전환 처리
 
   if (wasVisible && prevImg && prevImg !== nextImg) {
     sprite.style.transition = 'opacity 0.2s ease';
@@ -1563,6 +1845,26 @@ function setCharacter(charKey) {
   } else {
     applySprite();
     container.classList.add('visible');
+  }
+}
+
+/* ── 캐릭터 초상화 (선생님/채원/동혁) ── */
+const PORTRAIT_MAP = {
+  '선생님': 'assets/image/teacher.png',
+  '채원':   'assets/image/chaewon.png',
+  '동혁':   'assets/image/donghyuk.png',
+};
+
+function updatePortrait(speaker) {
+  const wrap = document.getElementById('dlg-portrait-wrap');
+  const img  = document.getElementById('dlg-portrait-img');
+  if (!wrap || !img) return;
+  const src = PORTRAIT_MAP[speaker];
+  if (src) {
+    img.src = src;
+    wrap.classList.add('visible');
+  } else {
+    wrap.classList.remove('visible');
   }
 }
 
@@ -1638,7 +1940,6 @@ function startGame() {
   G.moralGauge = 0;
   G.respect = 50;
   G.mistakes = 0;
-  clearSave();
   loadDay(1);
 }
 
@@ -1669,15 +1970,17 @@ function loadDay(dayId) {
   const chBadge = document.getElementById('hud-ch');
   chBadge.textContent = `CHAPTER ${dayObj.chapter}`;
   chBadge.className = `hud-badge ch${dayObj.chapter}`;
-  updateHUD(dayObj.chapter);
+  updateHUD();
   updateRelationLabel();
 
   // 분위기별 배경음 (1막 평온 → 2막 불안 → 3·4막 희망)
   const mood = dayObj.chapter === 2 ? 'tense' : (dayObj.chapter >= 3 ? 'hope' : 'calm');
   Sound.playBgm(mood);
 
-  // 진행 자동 저장 (입력 단계는 제외)
-  if (!dayObj.customTrigger) saveProgress();
+  // 히스토리 기록 + 뱃지 해금
+  addToHistory(dayObj);
+  checkBadgeUnlock(dayObj.chapter, dayId);
+
 
   // Grid Scanner Animation Mode
   const scanner = document.getElementById('game-scan-overlay');
@@ -1742,6 +2045,7 @@ function showNextDialogue() {
   const textEl = document.getElementById('dlg-text-area');
 
   setSpeakerStyle(speakerEl, dlg.speaker, dayObj.chapter);
+  updatePortrait(dlg.speaker);
 
   // 감정 프레임 자동 전환
   if (dlg.emotion) {
@@ -2013,6 +2317,7 @@ function showChoices(dayObj) {
 
 function showNormalChoices(dayObj) {
   hideAdvBtn();
+  updatePortrait(null);
   document.getElementById('game-dlg-box').style.display = 'none';
   document.getElementById('btn-dlg-adv').style.display = 'none';
   const wrap = document.getElementById('game-choice-wrap');
@@ -2154,6 +2459,7 @@ function showResponseThenDo(choice, chapter, callback) {
 
   const speaker = chapter === 3 ? 'System' : '노아';
   setSpeakerStyle(speakerEl, speaker, chapter);
+  updatePortrait(null);
 
   advBtn.textContent = '계속 →';
   hideAdvBtn();
@@ -3540,17 +3846,41 @@ document.getElementById('btn-teacher-next').addEventListener('click', () => {
 document.getElementById('hud-relation').addEventListener('click', () => {
   Sound.click(); openRelationOverlay(null);
 });
+
+/* ── 뱃지 패널 ── */
+document.getElementById('hud-badge-btn').addEventListener('click', () => {
+  Sound.click();
+  const panel = document.getElementById('badge-panel');
+  const isOpen = !panel.classList.contains('hidden');
+  closeAllPanels();
+  if (!isOpen) { panel.classList.remove('hidden'); renderBadgePanel(); }
+});
+document.getElementById('badge-panel-close').addEventListener('click', () => {
+  Sound.click();
+  document.getElementById('badge-panel').classList.add('hidden');
+});
+
+/* ── 히스토리 패널 ── */
+document.getElementById('hud-history-btn').addEventListener('click', () => {
+  Sound.click();
+  const panel = document.getElementById('history-panel');
+  const isOpen = !panel.classList.contains('hidden');
+  closeAllPanels();
+  if (!isOpen) { panel.classList.remove('hidden'); renderHistoryPanel(); }
+});
+document.getElementById('history-panel-close').addEventListener('click', () => {
+  Sound.click();
+  document.getElementById('history-panel').classList.add('hidden');
+});
 document.getElementById('btn-relation-ok').addEventListener('click', () => { Sound.click(); closeRelationOverlay(); });
 document.getElementById('btn-relation-close').addEventListener('click', () => { Sound.click(); closeRelationOverlay(); });
 
-/* ──────────────────────────────────────────
-   이어하기 (Continue)
-   ────────────────────────────────────────── */
-document.getElementById('btn-continue').addEventListener('click', () => {
-  Sound.init(); Sound.click();
-  if (!loadProgress()) {
-    alert('저장된 기록을 불러올 수 없습니다.');
-  }
+/* ── 언어 선택 ── */
+document.querySelectorAll('#seg-lang button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    Sound.click();
+    applyLang(btn.dataset.lang);
+  });
 });
 
 /* ──────────────────────────────────────────
@@ -3635,10 +3965,9 @@ document.getElementById('btn-record-download').addEventListener('click', () => {
   Settings.load();
   syncSettingsUI();
 
-  // 저장된 진행 기록이 있으면 '이어서 하기' 버튼 노출
-  if (hasSave()) {
-    document.getElementById('btn-continue').classList.remove('hidden');
-  }
+  // 저장된 언어 설정 복원
+  const savedLang = localStorage.getItem('lang') || 'ko';
+  applyLang(savedLang);
 
-  console.log('🚀 [App Init v2.0] 30일 시나리오 · 설정 · 이어하기 로드 완료');
+  console.log('🚀 [App Init v2.0] 30일 시나리오 · 설정 로드 완료');
 })();

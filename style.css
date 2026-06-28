@@ -718,7 +718,7 @@ canvas.a-canvas {
 }
 
 .hud-badge {
-  font-size: 20px;
+  font-size: clamp(11px, 1.6vw, 20px);
   font-weight: 800;
   letter-spacing: 2px;
   padding: 4px 12px;
@@ -729,12 +729,12 @@ canvas.a-canvas {
 
 /* DAY 배지 — 챕터 배지 바로 옆 */
 .hud-day-badge {
-  font-size: 20px;
+  font-size: clamp(11px, 1.5vw, 20px);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.977);
   letter-spacing: 2px;
   white-space: nowrap;
-  max-width: 350px;
+  max-width: min(350px, 28vw);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -830,20 +830,20 @@ canvas.a-canvas {
   background: rgba(10, 10, 26, 0.92);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
-  padding: 26px 28px 22px;
+  padding: clamp(16px, 2.5vw, 26px) clamp(16px, 2.5vw, 28px) clamp(14px, 2vw, 22px);
   backdrop-filter: blur(20px);
   box-shadow: 0 -4px 32px rgba(0,0,0,0.4);
-  min-height: 180px;
+  min-height: clamp(120px, 22vh, 180px);
   cursor: pointer;
   user-select: none;
 }
 
 #dlg-speaker-tag {
   display: inline-block;
-  font-size: 30px !important;
+  font-size: clamp(13px, 3vw, 28px) !important;
   font-weight: 700;
   letter-spacing: 1.5px;
-  padding: 12px 32px;
+  padding: clamp(6px, 1.2vw, 12px) clamp(12px, 2.5vw, 32px);
   border-radius: 20px;
   margin-bottom: 5px;
 }
@@ -854,10 +854,10 @@ canvas.a-canvas {
 .speaker-system-red { background: rgba(255,60,60,.2); color: #ff8080; border: 1px solid rgba(255,60,60,.4); }
 
 #dlg-text-area {
-  font-size: 30px !important;
+  font-size: clamp(13px, 2.8vw, 26px) !important;
   line-height: 1.75;
   color: var(--c-text);
-  min-height: 88px;
+  min-height: clamp(50px, 10vh, 88px);
   white-space: pre-wrap;
 }
 
@@ -892,10 +892,11 @@ canvas.a-canvas {
 }
 
 .choice-prompt-text {
-  font-size: 30px !important  ;
-  color: var(--c-muted);
+  font-size: clamp(14px, 2.2vw, 28px) !important;
+  color: #e0deff;
   letter-spacing: 1px;
   margin-bottom: 5px;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.9), 0 0 16px rgba(0,0,0,0.7);
 }
 
 #choice-btn-list {
@@ -908,17 +909,19 @@ canvas.a-canvas {
 
 .choice-btn {
   width: 200%;
-  padding: 32px 40px;
-  background: rgba(255,255,255,0.04);
-  border: 1.5px solid var(--c-border);
+  padding: clamp(14px, 2.5vw, 32px) clamp(16px, 3vw, 40px);
+  background: rgba(6, 6, 22, 0.82);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(124,109,240,0.45);
   border-radius: var(--radius-sm);
-  color: var(--c-text);
-  font-size: 35px !important;
+  color: #f0eeff;
+  font-size: clamp(14px, 2.6vw, 32px) !important;
   font-family: var(--font-main);
   line-height: 1.5;
   text-align: left;
   cursor: pointer;
   transition: all var(--transition);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.8);
 }
 .choice-btn:hover:not(:disabled) {
   border-color: var(--c-accent);
@@ -1968,41 +1971,237 @@ canvas.a-canvas {
   box-shadow: 0 0 12px rgba(124, 109, 240, 0.3);
 }
 
-/* ── HUD double gauges ── */
-#hud-gauges {
+/* ── HUD center: 뱃지 & 히스토리 버튼 ── */
+#hud-center-btns {
   display: flex;
-  gap: 24px;
+  gap: 10px;
   flex: 1;
-  max-width: 600px;
-  margin: 0 20px;
+  justify-content: center;
+  align-items: center;
 }
-.hud-gauge-item {
+.hud-icon-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 5px 14px;
+  color: var(--c-text);
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+.hud-icon-btn:hover { background: rgba(124,109,240,0.25); border-color: var(--c-accent); }
+.hib-icon { font-size: 16px; }
+.hib-label { font-size: clamp(10px, 1.2vw, 14px); font-weight: 600; letter-spacing: 0.5px; }
+
+/* ── Side Panel (뱃지 & 히스토리 공용) ── */
+.side-panel {
+  position: absolute;
+  top: 60px; right: 0;
+  width: clamp(260px, 30vw, 380px);
+  max-height: calc(100% - 70px);
+  background: rgba(10, 10, 28, 0.97);
+  border: 1px solid var(--c-border);
+  border-right: none;
+  border-radius: 14px 0 0 14px;
+  backdrop-filter: blur(24px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -6px 0 32px rgba(0,0,0,0.5);
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
+  overflow: hidden;
+}
+.side-panel.hidden {
+  transform: translateX(110%);
+  opacity: 0;
+  pointer-events: none;
+}
+.side-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  font-size: clamp(13px, 1.4vw, 16px);
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
+}
+.panel-close-btn {
+  background: none;
+  border: none;
+  color: var(--c-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+.panel-close-btn:hover { color: var(--c-text); background: rgba(255,255,255,0.08); }
+
+/* ── 뱃지 그리드 ── */
+#badge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 18px;
+  overflow-y: auto;
+}
+.badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: border-color 0.3s, background 0.3s;
+}
+.badge-item.unlocked {
+  border-color: rgba(124,109,240,0.5);
+  background: rgba(124,109,240,0.08);
+}
+.badge-img-wrap {
+  position: relative;
+  width: clamp(72px, 9vw, 110px);
+  height: clamp(72px, 9vw, 110px);
+}
+.badge-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+  transition: filter 0.4s ease;
+  filter: grayscale(1) brightness(0.4);
+}
+.badge-item.unlocked .badge-img { filter: none; }
+.badge-lock-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(0,0,0,0.35);
+  border-radius: 50%;
+  transition: opacity 0.4s ease;
+}
+.badge-item.unlocked .badge-lock-overlay { opacity: 0; pointer-events: none; }
+.badge-ch-tag {
+  font-size: clamp(9px, 1vw, 11px);
+  color: var(--c-accent);
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+.badge-name {
+  font-size: clamp(10px, 1.1vw, 13px);
+  color: var(--c-muted);
+  text-align: center;
+}
+.badge-item.unlocked .badge-name { color: var(--c-text); }
+
+/* ── 히스토리 리스트 ── */
+#history-list {
+  overflow-y: auto;
   flex: 1;
+  padding: 10px 0;
+}
+.history-empty {
+  color: var(--c-muted);
+  text-align: center;
+  padding: 30px 16px;
+  font-size: 13px;
+}
+.history-ch-divider {
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: var(--c-accent);
+  padding: 8px 18px 4px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.history-day-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 18px;
+  background: none;
+  border: none;
+  color: var(--c-text);
+  cursor: pointer;
+  font-family: var(--font-main);
+  text-align: left;
+  transition: background 0.15s;
+  border-radius: 0;
+}
+.history-day-btn:hover { background: rgba(124,109,240,0.12); }
+.hist-day-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-accent);
+  min-width: 40px;
+  white-space: nowrap;
+}
+.hist-day-title {
+  font-size: clamp(11px, 1.2vw, 13px);
+  color: var(--c-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.history-day-btn:hover .hist-day-title { color: var(--c-text); }
+
+/* ── 뱃지 획득 토스트 ── */
+.badge-toast {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: linear-gradient(135deg, rgba(124,109,240,0.95), rgba(94,240,160,0.85));
+  color: #fff;
+  font-size: clamp(13px, 1.5vw, 16px);
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 200;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  white-space: nowrap;
+}
+.badge-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
-/* ── Visual Novel stage illustration panel ── */
-#game-visual-panel {
-  /* flex 흐름에 참여 → 대화창 위 공간만 차지 */
-  position: relative;
-  flex: 1;
-  z-index: 5;
-  background: #090910;
-  overflow: hidden;
-  min-height: 0;
-}
+/* ── Full-screen background (screen-game 직속 자식, z-index 0) ── */
 #game-bg-illustration {
   position: absolute;
   inset: 0;
-  background-color: #090910; /* PNG 투명·여백 → 어두운 단색으로 채움 */
+  z-index: 0;
+  background-color: #090910;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   transition: background-image 0.8s ease-in-out,
-              background-position 0.6s ease,
-              background-size 0.6s ease;
-  transform: scale(1.02);
+              background-position 0.6s ease;
+}
+
+/* ── Visual Novel stage (character sprite only) ── */
+#game-visual-panel {
+  position: relative;
+  flex: 1;
+  z-index: 5;
+  background: transparent;
+  overflow: visible;
+  min-height: 0;
 }
 #game-character-sprite-container {
   position: absolute;
@@ -2159,6 +2358,31 @@ canvas.a-canvas {
   box-shadow: 0 -4px 32px rgba(0,0,0,0.5), inset 0 0 15px rgba(124, 109, 240, 0.05);
   background: rgba(8, 8, 20, 0.85);
   position: relative;
+}
+
+/* ── 캐릭터 초상화 (선생님 / 채원 / 동혁) ── */
+#dlg-portrait-wrap {
+  position: absolute;
+  left: 16px;
+  bottom: 100%;
+  width: clamp(400px, 22vw, 760px);
+  height: clamp(560px, 31vw, 1064px);
+  pointer-events: none;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateY(14px);
+}
+#dlg-portrait-wrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+#dlg-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
 }
 
 /* ══════════════════════════════════════════
@@ -2818,9 +3042,6 @@ body.contrast-mode .relation-axis-fill.green {
 }
 .seg-control button.active { background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
 
-/* ── 이어하기 버튼 (메뉴) ── */
-.btn-continue { background: linear-gradient(135deg, var(--c-success), #3fb37a); }
-
 /* ── 교사용 가이드 카드 ── */
 .teacher-card {
   position: relative;
@@ -2942,10 +3163,46 @@ body.contrast-mode .relation-axis-fill.green {
 .rec-date { margin-left: auto; font-size: 12px; color: #888; }
 .rec-footer { text-align: center; font-size: 11px; color: #888; border-top: 1px solid #d8f0e2; padding-top: 14px; margin-top: 18px; }
 
-/* 모바일/태블릿 세로 — HUD 관계칩 줄바꿈 방지 */
-@media (max-width: 520px) {
-  #hud-gauges { gap: 10px; }
-  .hud-relation { font-size: 10px; padding: 2px 7px; }
-  #hud-day-num { font-size: 11px; }
-  .settings-gear { width: 36px; height: 36px; font-size: 18px; }
+/* ══ 반응형 — 태블릿 (601~900px) ══ */
+@media (max-width: 900px) {
+  #hud-center-btns { gap: 6px; }
+  .hib-label { display: none; }
+  .hud-day-badge { max-width: min(240px, 22vw); }
+  /* 초상화 — 태블릿 (3×) */
+  #dlg-portrait-wrap { width: clamp(160px, 23vw, 280px); height: clamp(224px, 32vw, 392px); left: 12px; }
+}
+
+/* ══ 반응형 — 모바일 폰 (≤600px) ══ */
+@media (max-width: 600px) {
+  /* HUD 전체 압축 */
+  #game-hud { padding: 6px 50px 6px 8px; gap: 5px; }
+  .hud-badge { font-size: 10px; padding: 2px 7px; letter-spacing: 0.5px; }
+  .hud-day-badge { display: none; }
+  #hud-center-btns { gap: 4px; }
+  .hib-icon { font-size: 14px; }
+  .side-panel { width: clamp(220px, 80vw, 320px); }
+  .hud-relation { font-size: 9px; padding: 2px 6px; }
+  #hud-day-num  { font-size: 10px; }
+  .settings-gear { width: 34px; height: 34px; font-size: 17px; }
+
+  /* 캐릭터 스프라이트 — 폰 화면 비율에 맞게 축소 */
+  #game-character-sprite { height: clamp(140px, 46vh, 280px); }
+
+  /* 관계 사이드바 좁힘 */
+  #relation-sidebar { width: 110px; padding: 8px 7px; }
+  .rsb-header { font-size: 10px; }
+  .rsb-type-row { font-size: 11px; }
+  .rsb-desc  { font-size: 9px; }
+  .rsb-lbl   { font-size: 9px; }
+  .rsb-val   { font-size: 9px; }
+
+  /* 초상화 — 모바일 반응형 (3×) */
+  #dlg-portrait-wrap { width: clamp(140px, 36vw, 200px); height: clamp(196px, 50vw, 280px); left: 8px; }
+
+  /* 선택지 버튼 */
+  .choice-btn           { font-size: 12px; padding: 10px 12px; }
+  .choice-prompt-text   { font-size: 12px; }
+
+  /* 대화창 불투명도 올리기 (배경이 보이는 환경) */
+  #game-dlg-box { background: rgba(5, 5, 15, 0.94); }
 }
