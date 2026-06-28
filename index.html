@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,35 +11,30 @@
   <!-- html2canvas CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=10" />
+  <link rel="stylesheet" href="style.css?v=20" />
 </head>
+
 <body>
 
   <!-- ══════════════════════════════════════════
        LAYER 0 · A-Frame 360° 배경 공간
   ══════════════════════════════════════════ -->
-  <a-scene
-    id="aframe-scene"
-    embedded
-    vr-mode-ui="enabled: false"
-    renderer="antialias: true"
-    loading-screen="dotsColor: #7c6df0; backgroundColor: #0a0a1a"
-  >
+  <a-scene id="aframe-scene" embedded vr-mode-ui="enabled: false" renderer="antialias: true"
+    loading-screen="dotsColor: #7c6df0; backgroundColor: #0a0a1a">
     <!-- 하늘 배경 -->
     <a-sky id="scene-sky" color="#0a0a1a" radius="100"></a-sky>
 
     <!-- 교실 분위기를 암시하는 기하학 오브젝트들 (Onboarding용 장식) -->
     <a-entity id="deco-group">
       <!-- 부유하는 육면체들 -->
-      <a-box position="-8 2 -15" rotation="20 40 0" width="1.2" height="1.2" depth="1.2"
-             color="#7c6df0" opacity="0.25" animation="property: rotation; to: 40 80 20; dur: 8000; loop: true; easing: easeInOutSine"></a-box>
-      <a-box position="9 3 -18" rotation="-15 60 10" width="0.8" height="0.8" depth="0.8"
-             color="#f07caa" opacity="0.2" animation="property: rotation; to: -35 100 30; dur: 10000; loop: true; easing: easeInOutSine"></a-box>
-      <a-sphere position="0 5 -20" radius="0.6"
-                color="#7cc5f0" opacity="0.15" animation="property: position; to: 0 6.5 -20; dur: 4000; loop: true; dir: alternate; easing: easeInOutSine"></a-sphere>
+      <a-box position="-8 2 -15" rotation="20 40 0" width="1.2" height="1.2" depth="1.2" color="#7c6df0" opacity="0.25"
+        animation="property: rotation; to: 40 80 20; dur: 8000; loop: true; easing: easeInOutSine"></a-box>
+      <a-box position="9 3 -18" rotation="-15 60 10" width="0.8" height="0.8" depth="0.8" color="#f07caa" opacity="0.2"
+        animation="property: rotation; to: -35 100 30; dur: 10000; loop: true; easing: easeInOutSine"></a-box>
+      <a-sphere position="0 5 -20" radius="0.6" color="#7cc5f0" opacity="0.15"
+        animation="property: position; to: 0 6.5 -20; dur: 4000; loop: true; dir: alternate; easing: easeInOutSine"></a-sphere>
       <!-- 바닥 그리드 느낌 평면 -->
-      <a-plane position="0 -3 -10" rotation="-90 0 0" width="50" height="50"
-               color="#1a1a3a" opacity="0.9"></a-plane>
+      <a-plane position="0 -3 -10" rotation="-90 0 0" width="50" height="50" color="#1a1a3a" opacity="0.9"></a-plane>
     </a-entity>
 
     <a-entity position="0 1.6 0">
@@ -56,20 +52,21 @@
          SCREEN: INTRO
     ───────────────────────────────────────── -->
     <div id="screen-intro" class="screen active">
-      <div class="intro-content">
-        <div class="intro-year-tag">2026년</div>
-        <h1 class="intro-headline">
-          우리 반에<br/>
-          <em>특별한 전학생</em>이<br/>
-          왔다.
-        </h1>
-        <div class="intro-video-placeholder">
-          <span class="video-icon">▶</span>
-          <p>동영상 삽입 예정</p>
-        </div>
-        <button class="btn-skip" id="btn-intro-skip">SKIP →</button>
+      <!-- 풀스크린 인트로 영상 -->
+      <video id="intro-video" playsinline preload="auto">
+        <source src="assets/movie/0627%20(1)%20noah%20intro%20ver1.mp4" type="video/mp4" />
+      </video>
+      <!-- 자동재생 차단 시 클릭 유도 오버레이 -->
+      <div id="intro-click-start" class="intro-click-overlay" style="display:none">
+        <div class="intro-play-hint">▶ 클릭하여 영상 시작</div>
       </div>
+      <button class="btn-skip" id="btn-intro-skip">SKIP →</button>
     </div>
+
+    <!-- 메뉴 BGM (숨김) -->
+    <audio id="menu-bgm-audio" preload="auto">
+      <source src="assets/sound/Lessons_In_Sunlight%20bg.mp3" type="audio/mpeg" />
+    </audio>
 
 
     <!-- ─────────────────────────────────────
@@ -87,7 +84,9 @@
         <p class="menu-subtitle">인공지능 로봇과 올바른 관계 맺기 시뮬레이터</p>
         <div class="menu-buttons">
           <button class="btn-primary" id="btn-start">시작하기</button>
+          <button class="btn-primary btn-continue hidden" id="btn-continue">이어서 하기 ▶</button>
           <button class="btn-secondary" id="btn-guide">사용 가이드</button>
+          <button class="btn-secondary" id="btn-teacher-menu">📋 교사용 가이드</button>
         </div>
         <div class="achievement-badge">성취기준 [6도02-03] 기반</div>
       </div>
@@ -109,18 +108,19 @@
           <div class="avatar-face">🤖</div>
         </div>
         <div class="noa-bubble">
-          <p>안녕! 나는 <strong>노아</strong>야.<br/>먼저 네 이름을 알려줄 수 있어?</p>
+          <p>안녕! <br />먼저 네 이름을 알려줄 수 있어?</p>
         </div>
         <div class="input-group">
           <label for="input-name">나의 이름</label>
-          <input
-            type="text"
-            id="input-name"
-            placeholder="이름을 입력하세요"
-            maxlength="10"
-            autocomplete="off"
-          />
+          <input type="text" id="input-name" placeholder="이름을 입력하세요" maxlength="10" autocomplete="off" />
           <span class="input-hint">최대 10자</span>
+        </div>
+        <div class="input-group">
+          <label>나의 성별</label>
+          <div class="gender-btn-group">
+            <button type="button" class="btn-gender active" id="btn-gender-m" data-gender="남">남성 ♂</button>
+            <button type="button" class="btn-gender" id="btn-gender-f" data-gender="여">여성 ♀</button>
+          </div>
         </div>
         <button class="btn-primary" id="btn-input1-next" disabled>다음으로 →</button>
       </div>
@@ -150,14 +150,8 @@
           </p>
           <div class="friend-def-row">
             <span class="bracket">"</span>
-            <input
-              type="text"
-              id="input-friend-def"
-              placeholder="어떤 존재"
-              maxlength="20"
-              autocomplete="off"
-              class="inline-input"
-            />
+            <input type="text" id="input-friend-def" placeholder="어떤 존재" maxlength="20" autocomplete="off"
+              class="inline-input" />
             <span class="bracket">"</span>
           </div>
           <p class="friend-def-prompt mt-sm">
@@ -165,16 +159,10 @@
           </p>
           <div class="friend-def-row">
             <span class="bracket">"</span>
-            <input
-              type="text"
-              id="input-friend-reason"
-              placeholder="그 이유"
-              maxlength="30"
-              autocomplete="off"
-              class="inline-input wide-input"
-            />
+            <input type="text" id="input-friend-reason" placeholder="그 이유" maxlength="30" autocomplete="off"
+              class="inline-input wide-input" />
             <span class="bracket">"</span>
-            <span class="suffix">이기 때문이다.</span>
+            <span class="suffix"> 때문이다.</span>
           </div>
           <p class="spoiler-hint">※ 이 대답은 나중에 중요한 순간에 다시 등장합니다.</p>
         </div>
@@ -237,13 +225,44 @@
       <!-- HUD -->
       <div id="game-hud">
         <div id="hud-ch" class="hud-badge ch1">CHAPTER 1</div>
-        <div id="hud-gauge-group">
-          <span id="hud-g-icon">⚡</span>
-          <span id="hud-g-name">효율성</span>
-          <div id="hud-g-track"><div id="hud-g-fill"></div></div>
-          <span id="hud-g-pct">0%</span>
+        <div id="hud-day-badge" class="hud-day-badge">DAY ?</div>
+        <div id="hud-gauges">
+          <div class="hud-gauge-item" id="gauge-affinity-wrap">
+            <span class="hud-g-icon">❤️</span>
+            <span class="hud-g-name">친밀도</span>
+            <div class="hud-g-track">
+              <div id="hud-g-fill-affinity" class="hud-g-fill"></div>
+            </div>
+            <span id="hud-g-pct-affinity" class="hud-g-pct">0%</span>
+          </div>
+          <div class="hud-gauge-item" id="gauge-moral-wrap">
+            <span id="hud-g-icon-moral" class="hud-g-icon">⚡</span>
+            <span id="hud-g-name-moral" class="hud-g-name">효율성</span>
+            <div class="hud-g-track">
+              <div id="hud-g-fill-moral" class="hud-g-fill"></div>
+            </div>
+            <span id="hud-g-pct-moral" class="hud-g-pct">0%</span>
+          </div>
         </div>
-        <div id="hud-stage-num">Stage 1</div>
+        <div id="hud-right-col">
+          <div id="hud-day-num">Day 1</div>
+          <button id="hud-relation" class="hud-relation" title="현재 노아와 나의 관계 — 눌러서 자세히 보기">🔗 첫 만남</button>
+        </div>
+      </div>
+
+      <!-- Visual Novel Stage (Full-screen background and screen-filling character) -->
+      <div id="game-visual-panel">
+        <div id="game-bg-illustration"></div>
+        <div id="game-character-sprite-container">
+          <div id="game-character-sprite-wrap">
+            <div id="noah-exclaim" aria-label="대화 계속">!</div>
+            <div id="game-character-sprite"></div>
+          </div>
+        </div>
+        <div id="game-scan-overlay" class="hidden">
+          <div class="scan-line"></div>
+          <div class="scan-grid"></div>
+        </div>
       </div>
 
       <!-- 스테이지 타이틀 플래시 -->
@@ -251,19 +270,47 @@
         <span id="stage-title-inner"></span>
       </div>
 
-      <!-- 대화창 (하단 고정) -->
+      <!-- 항상 표시 관계 사이드바 -->
+      <div id="relation-sidebar">
+        <div class="rsb-header">🔗 관계 현황</div>
+        <div class="rsb-type-row">
+          <span id="rsb-emoji">🤖</span>
+          <span id="rsb-name">--</span>
+        </div>
+        <p id="rsb-desc" class="rsb-desc"></p>
+        <div class="rsb-bars">
+          <div class="rsb-bar-row">
+            <span class="rsb-lbl">❤️ 친밀도</span>
+            <div class="rsb-track"><div id="rsb-fill-aff" class="rsb-fill rsb-aff"></div></div>
+            <span id="rsb-val-aff" class="rsb-val">0%</span>
+          </div>
+          <div class="rsb-bar-row">
+            <span class="rsb-lbl">⚡ 효율성</span>
+            <div class="rsb-track"><div id="rsb-fill-eff" class="rsb-fill rsb-eff"></div></div>
+            <span id="rsb-val-eff" class="rsb-val">0%</span>
+          </div>
+          <!-- 도덕성: 챕터 2 전까지 hidden -->
+          <div id="rsb-moral-row" class="rsb-bar-row rsb-moral-hidden">
+            <span class="rsb-lbl">💚 도덕성</span>
+            <div class="rsb-track"><div id="rsb-fill-moral" class="rsb-fill rsb-moral"></div></div>
+            <span id="rsb-val-moral" class="rsb-val">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 대화창 + 선택지 (하단 고정) -->
       <div id="game-dlg-wrap">
         <div id="game-dlg-box">
           <span id="dlg-speaker-tag"></span>
           <div id="dlg-text-area"></div>
+          <span id="dlg-click-prompt" class="dlg-click-prompt">▼</span>
         </div>
         <button id="btn-dlg-adv" class="btn-dlg-adv" disabled>다음 ▶</button>
-      </div>
-
-      <!-- 선택지 (중앙) -->
-      <div id="game-choice-wrap" style="display:none">
-        <p class="choice-prompt-text">어떻게 할까요?</p>
-        <div id="choice-btn-list"></div>
+        <!-- 선택지 — dlg-wrap 안에서 대화창 대신 표시 -->
+        <div id="game-choice-wrap" style="display:none">
+          <p class="choice-prompt-text">어떻게 할까요?</p>
+          <div id="choice-btn-list"></div>
+        </div>
       </div>
 
     </div><!-- /#screen-game -->
@@ -318,9 +365,13 @@
     <div id="ov-gameover" class="game-overlay hidden">
       <div class="gameover-card">
         <div class="gameover-symbol">⚠️</div>
-        <h2 class="gameover-title" id="go-title">비효율적인 선택!</h2>
+        <h2 class="gameover-title" id="go-title">잠깐, 다시 생각해볼까요?</h2>
         <p class="gameover-desc" id="go-desc"></p>
-        <button class="btn-primary" id="btn-go-retry">다시 도전 →</button>
+        <div class="gameover-lesson-box">
+          <span class="gameover-lesson-tag">💡 생각해보기</span>
+          <p class="gameover-lesson" id="go-lesson"></p>
+        </div>
+        <button class="btn-primary" id="btn-go-retry">다시 선택할게요 →</button>
       </div>
     </div>
 
@@ -360,7 +411,7 @@
         <p class="sig-desc">나는 위의 약속들을 지키며 AI와 올바른 관계를 맺겠습니다.</p>
         <div class="input-group sig-input-group">
           <label for="input-signature">나의 서명</label>
-          <input type="text" id="input-signature" placeholder="이름을 입력하세요" maxlength="10" autocomplete="off"/>
+          <input type="text" id="input-signature" placeholder="이름을 입력하세요" maxlength="10" autocomplete="off" />
         </div>
         <button id="btn-signature-done" class="btn-primary" disabled>윤리 헌장 발급받기 →</button>
       </div>
@@ -374,6 +425,150 @@
       <div id="cinematic-inner">
         <div id="cinematic-text-area"></div>
         <p class="cinematic-hint">— 클릭하여 계속 —</p>
+      </div>
+    </div>
+
+
+    <!-- ─────────────────────────────────────
+         OVERLAY: 최종 30일 기록 보고서 및 엔딩 분기
+    ───────────────────────────────────────── -->
+    <div id="ov-ending-report" class="game-overlay hidden">
+      <div class="ending-card">
+        <div class="ending-ribbon">🏆 30일의 모험 완료</div>
+        <h2 class="ending-title">노아와 함께한 30일의 기록</h2>
+
+        <div class="ending-result-box">
+          <p class="ending-eval-label">최종 관계 등급</p>
+          <div class="ending-tier-title" id="end-tier-name">영혼의 동반자</div>
+          <p class="ending-tier-desc" id="end-tier-desc">노아와 완벽한 정서적, 도덕적 교감을 나눴습니다.</p>
+        </div>
+
+        <div class="ending-stats-grid">
+          <div class="ending-stat-card">
+            <span class="stat-emoji">❤️</span>
+            <span class="stat-label">최종 친밀도</span>
+            <span class="stat-value" id="end-stat-affinity">95%</span>
+          </div>
+          <div class="ending-stat-card">
+            <span class="stat-emoji">💚</span>
+            <span class="stat-label">최종 도덕성</span>
+            <span class="stat-value" id="end-stat-moral">100%</span>
+          </div>
+          <div class="ending-stat-card">
+            <span class="stat-emoji">⚡</span>
+            <span class="stat-label">최종 효율성</span>
+            <span class="stat-value" id="end-stat-efficiency">15%</span>
+          </div>
+        </div>
+
+        <div class="ending-buttons">
+          <button class="btn-primary" id="btn-report-download">💾 30일의 기록 보고서 다운로드</button>
+          <button class="btn-primary" id="btn-record-download">📝 나의 성찰 기록지 다운로드</button>
+          <button class="btn-secondary" id="btn-replay">🔄 다시 플레이하기 (리플레이)</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ─────────────────────────────────────
+         설정 버튼 (항상 표시)
+    ───────────────────────────────────────── -->
+    <button id="btn-settings-gear" class="settings-gear" title="설정" aria-label="설정 열기">⚙</button>
+
+
+    <!-- ─────────────────────────────────────
+         OVERLAY: 설정 패널
+    ───────────────────────────────────────── -->
+    <div id="ov-settings" class="game-overlay hidden">
+      <div class="settings-card">
+        <button id="btn-settings-close" class="settings-close" aria-label="설정 닫기">✕</button>
+        <h2 class="settings-title">⚙ 설정</h2>
+
+        <div class="settings-group">
+          <span class="settings-label">🔊 효과음</span>
+          <button class="toggle-switch on" id="tg-sfx" role="switch" aria-checked="true"><span class="toggle-knob"></span></button>
+        </div>
+
+        <div class="settings-group">
+          <span class="settings-label">🎵 배경 음악</span>
+          <button class="toggle-switch on" id="tg-bgm" role="switch" aria-checked="true"><span class="toggle-knob"></span></button>
+        </div>
+
+        <div class="settings-group">
+          <span class="settings-label">🗣️ 대사 읽어주기</span>
+          <button class="toggle-switch" id="tg-tts" role="switch" aria-checked="false"><span class="toggle-knob"></span></button>
+        </div>
+
+        <div class="settings-group column">
+          <span class="settings-label">🔤 글자 크기</span>
+          <div class="seg-control" id="seg-fontsize">
+            <button data-fs="sm">작게</button>
+            <button data-fs="md" class="active">보통</button>
+            <button data-fs="lg">크게</button>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <span class="settings-label">👁️ 고대비(색약) 모드</span>
+          <button class="toggle-switch" id="tg-contrast" role="switch" aria-checked="false"><span class="toggle-knob"></span></button>
+        </div>
+
+        <div class="settings-divider"></div>
+
+        <button class="btn-secondary settings-action" id="btn-open-teacher">📋 교사용 가이드 보기</button>
+        <button class="btn-secondary settings-action settings-danger" id="btn-reset-progress">🗑️ 진행 기록 초기화</button>
+
+        <p class="settings-foot">성취기준 [6도02-03] · 공존·상생 프로젝트 v2.0</p>
+      </div>
+    </div>
+
+
+    <!-- ─────────────────────────────────────
+         OVERLAY: 교사용 가이드
+    ───────────────────────────────────────── -->
+    <div id="ov-teacher" class="game-overlay hidden">
+      <div class="teacher-card">
+        <button id="btn-teacher-close" class="settings-close" aria-label="가이드 닫기">✕</button>
+        <h2 class="teacher-title">📋 교사용 수업 가이드</h2>
+        <p class="teacher-sub" id="teacher-context">현재 진행 상황에 맞는 발문과 핵심 개념을 안내합니다.</p>
+        <div id="teacher-body" class="teacher-body"></div>
+        <div class="teacher-nav">
+          <button class="btn-secondary small" id="btn-teacher-prev">← 이전 단계</button>
+          <span id="teacher-stage-label" class="teacher-stage-label">전체 흐름</span>
+          <button class="btn-secondary small" id="btn-teacher-next">다음 단계 →</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ─────────────────────────────────────
+         OVERLAY: 관계 진단 (HUD 관계칩 클릭 시)
+    ───────────────────────────────────────── -->
+    <div id="ov-relation" class="game-overlay hidden">
+      <div class="relation-card">
+        <button id="btn-relation-close" class="settings-close" aria-label="닫기">✕</button>
+        <h3 class="relation-title">🔗 지금, 나와 노아의 관계는?</h3>
+        <div class="relation-axis">
+          <div class="relation-axis-row">
+            <span class="relation-axis-lbl">❤️ 친밀도</span>
+            <div class="relation-axis-track"><div id="relation-bar-aff" class="relation-axis-fill"></div></div>
+            <span id="relation-val-aff" class="relation-axis-val">50%</span>
+          </div>
+          <div class="relation-axis-row">
+            <span class="relation-axis-lbl">💚 존중·도덕</span>
+            <div class="relation-axis-track"><div id="relation-bar-res" class="relation-axis-fill green"></div></div>
+            <span id="relation-val-res" class="relation-axis-val">50%</span>
+          </div>
+        </div>
+        <div class="relation-type-box">
+          <span class="relation-type-emoji" id="relation-type-emoji">🤝</span>
+          <div>
+            <p class="relation-type-name" id="relation-type-name">동료</p>
+            <p class="relation-type-desc" id="relation-type-desc">노아와 서로 돕는 동료 관계입니다.</p>
+          </div>
+        </div>
+        <p class="relation-hint">💡 친밀도만 높은 관계는 자칫 노아를 '편한 도구'로 대하게 될 수 있어요. 친밀함과 도덕적 존중이 함께 자랄 때 진짜 공존입니다.</p>
+        <button class="btn-primary" id="btn-relation-ok">계속하기 →</button>
       </div>
     </div>
 
@@ -409,6 +604,108 @@
   </div>
 
 
-  <script src="script.js"></script>
+  <!-- ─────────────────────────────────────
+       REPORT TEMPLATE (off-screen, html2canvas 캡처용)
+  ───────────────────────────────────────── -->
+  <div id="report-template">
+    <div class="rt-inner">
+      <div class="rt-header">
+        <div class="rt-logo">🤖📊</div>
+        <h1 class="rt-main-title">노아와 함께한 30일의 기록 보고서</h1>
+        <p class="rt-subtitle">REPORT: AI RELATIONSHIP EVALUATION</p>
+      </div>
+      <div class="rt-body">
+        <div class="rt-meta-table">
+          <div class="rt-meta-row">
+            <span class="rt-meta-lbl">대상 학생:</span>
+            <span class="rt-meta-val" id="rt-student-name">김도덕</span>
+            <span class="rt-meta-lbl">성별:</span>
+            <span class="rt-meta-val" id="rt-student-gender">남</span>
+          </div>
+          <div class="rt-meta-row">
+            <span class="rt-meta-lbl">평가 일자:</span>
+            <span class="rt-meta-val" id="rt-date">2040년 6월 30일</span>
+            <span class="rt-meta-lbl">최종 친밀도:</span>
+            <span class="rt-meta-val rt-highlight" id="rt-affinity">95%</span>
+          </div>
+        </div>
+        <div class="rt-verdict-box">
+          <div class="rt-verdict-lbl">관계 평가 결과</div>
+          <div class="rt-tier-title" id="rt-tier-name">영혼의 동반자 (Tier 1)</div>
+          <p class="rt-tier-desc" id="rt-tier-desc">인간과 인공지능의 공존 가치를 깊이 이해하고 노아를 도구화하지 않으며 따뜻한 정서적 교감을 이끌어냈습니다.</p>
+        </div>
+        <div class="rt-stats-section">
+          <h3 class="rt-section-title">📊 핵심 스탯 요약</h3>
+          <div class="rt-stats-row">
+            <div class="rt-stat-item">
+              <div class="rt-stat-val text-success" id="rt-stat-moral">100점</div>
+              <div class="rt-stat-lbl">도덕성 수치</div>
+            </div>
+            <div class="rt-stat-item">
+              <div class="rt-stat-val text-primary" id="rt-stat-eff">15점</div>
+              <div class="rt-stat-lbl">효율성 수치</div>
+            </div>
+          </div>
+        </div>
+        <div class="rt-footer-note">
+          <p>본 보고서는 로봇 '노아'와 30일간 진행한 공존·상생 시뮬레이션의 최종 기록입니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ─────────────────────────────────────
+       RECORD SHEET TEMPLATE (off-screen, html2canvas 캡처용)
+       학생의 모든 생각·응답을 한 장으로 모은 성찰 기록지
+  ───────────────────────────────────────── -->
+  <div id="record-template">
+    <div class="rec-inner">
+      <div class="rec-header">
+        <div class="rec-logo">🌱</div>
+        <h1 class="rec-main-title">나의 공존·상생 성찰 기록지</h1>
+        <p class="rec-subtitle">AI 전학생 '노아'와 함께한 30일의 생각 모음</p>
+      </div>
+      <div class="rec-body">
+        <div class="rec-meta">
+          <span><b>이름</b> <span id="rec-name">―</span></span>
+          <span><b>최종 관계</b> <span id="rec-tier">―</span></span>
+        </div>
+
+        <div class="rec-block">
+          <p class="rec-q">Q1. 나에게 '친구'란?</p>
+          <p class="rec-a" id="rec-friend">―</p>
+        </div>
+
+        <div class="rec-block">
+          <p class="rec-q">Q2. 인간만이 할 수 있는 '고유한 가치'는 무엇일까?</p>
+          <p class="rec-a" id="rec-discussion">―</p>
+        </div>
+
+        <div class="rec-block">
+          <p class="rec-q">Q3. 오늘 학교에서 가장 따뜻했던 한 순간 (나의 창작 글)</p>
+          <p class="rec-a" id="rec-writing">―</p>
+        </div>
+
+        <div class="rec-block">
+          <p class="rec-q">Q4. 노아와 올바른 관계를 위한 나의 세 가지 약속</p>
+          <ol class="rec-pledges" id="rec-pledges"></ol>
+        </div>
+
+        <div class="rec-sign-row">
+          <span class="rec-sign-lbl">서명</span>
+          <span class="rec-sign" id="rec-sign">―</span>
+          <span class="rec-date" id="rec-date"></span>
+        </div>
+      </div>
+      <div class="rec-footer">
+        <p>성취기준 [6도02-03] 인간과 인공지능 로봇 간의 도덕에 기반한 관계 형성</p>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="script.js?v=20"></script>
 </body>
+
 </html>
