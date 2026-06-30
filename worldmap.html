@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>노아 시뮬레이터 — 월드맵</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#000;font-family:'Jua',sans-serif;color:#fff;touch-action:none}
+#c{position:fixed;top:0;left:0;width:100vw;height:100vh}
+
+/* ── UI OVERLAY ── */
+#ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+
+#zone-bar{
+  position:absolute;top:18px;left:50%;transform:translateX(-50%);
+  background:rgba(8,14,30,.85);border:2px solid #3b82f6;border-radius:30px;
+  padding:7px 26px;font-size:1.05rem;letter-spacing:.08em;
+  backdrop-filter:blur(8px);transition:border-color .5s,color .5s;
+  white-space:nowrap;
+}
+
+#stat-panel{
+  position:absolute;top:18px;left:18px;
+  background:rgba(8,14,30,.85);border:2px solid #3b82f6;border-radius:12px;
+  padding:13px 16px;backdrop-filter:blur(6px);min-width:190px;
+}
+#stat-panel h2{font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.sr{display:flex;justify-content:space-between;align-items:center;font-size:.9rem;margin:3px 0}
+.sv{font-weight:700}
+
+#journey{
+  position:absolute;bottom:90px;right:18px;
+  background:rgba(8,14,30,.85);border:2px solid #7c3aed;border-radius:12px;
+  padding:11px 15px;backdrop-filter:blur(6px);min-width:180px;
+}
+#journey h3{font-size:.75rem;color:#a78bfa;margin-bottom:7px;text-transform:uppercase;letter-spacing:.08em}
+.jz{font-size:.82rem;line-height:1.9;transition:color .4s}
+
+/* mini-map */
+#mmap{
+  position:absolute;bottom:90px;left:18px;
+  width:220px;height:44px;
+  background:rgba(8,14,30,.85);border:1px solid #1e3a5f;border-radius:8px;overflow:hidden;
+}
+#mmap-track{position:absolute;top:50%;left:10px;right:10px;height:2px;background:#1e3a5f;transform:translateY(-50%)}
+.mzone{position:absolute;top:0;bottom:0;opacity:.35}
+#mplayer{
+  position:absolute;top:50%;width:9px;height:9px;
+  background:#60a5fa;border-radius:50%;transform:translate(-50%,-50%);
+  transition:left .08s linear;box-shadow:0 0 6px #60a5fa;
+}
+.mlabel{position:absolute;bottom:3px;font-size:.48rem;color:#64748b;transform:translateX(-50%)}
+
+/* hint */
+#hint{
+  position:absolute;bottom:150px;left:50%;transform:translateX(-50%);
+  background:rgba(250,204,21,.12);border:2px solid #facc15;border-radius:12px;
+  padding:9px 20px;font-size:.95rem;text-align:center;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+#hint.on{opacity:1}
+
+/* keyboard hint bar (desktop only) */
+#ctrl{
+  position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  display:flex;gap:10px;align-items:center;
+  background:rgba(0,0,0,.6);border-radius:30px;padding:9px 22px;
+  border:1px solid #334155;pointer-events:none;
+}
+@media (pointer:coarse){#ctrl{display:none}}
+kbd{background:#334155;padding:3px 9px;border-radius:5px;color:#facc15;font-family:'Jua',sans-serif;font-size:.9rem}
+.sep{color:#475569}
+
+/* ── MOBILE CONTROLS ── */
+#mobile-ctrl{
+  position:fixed;bottom:0;left:0;right:0;
+  height:180px;pointer-events:none;z-index:20;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 28px 32px;
+}
+/* D-pad pill */
+#dpad{
+  width:210px;height:88px;
+  background:rgba(255,255,255,.13);border:3px solid rgba(255,255,255,.45);
+  border-radius:60px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;pointer-events:all;user-select:none;-webkit-user-select:none;
+  backdrop-filter:blur(4px);
+}
+.dp-btn{
+  width:64px;height:64px;background:rgba(255,255,255,.18);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.9rem;color:#fff;cursor:pointer;
+  transition:background .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.dp-btn:active,.dp-btn.pressed{background:rgba(255,255,255,.4)}
+/* Action buttons */
+#act-btns{
+  display:flex;flex-direction:row;gap:16px;align-items:flex-end;
+  pointer-events:all;
+}
+.act-btn{
+  width:88px;height:88px;
+  background:rgba(255,255,255,.13);border:3px solid rgba(255,255,255,.45);
+  border-radius:50%;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;
+  font-family:'Jua',sans-serif;color:#fff;font-size:.82rem;
+  cursor:pointer;user-select:none;-webkit-user-select:none;
+  backdrop-filter:blur(4px);transition:background .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.act-btn:active,.act-btn.pressed{background:rgba(255,255,255,.38)}
+.act-btn .act-icon{font-size:1.5rem;line-height:1}
+#btn-jump{border-color:rgba(96,165,250,.7);background:rgba(29,78,216,.25)}
+#btn-jump:active,#btn-jump.pressed{background:rgba(29,78,216,.55)}
+#btn-interact{border-color:rgba(250,204,21,.7);background:rgba(161,139,0,.2)}
+#btn-interact:active,#btn-interact.pressed{background:rgba(250,204,21,.35)}
+
+/* ── TRANSITION ── */
+#fade{
+  position:fixed;top:0;left:0;width:100%;height:100%;background:#000;
+  opacity:0;pointer-events:none;z-index:50;transition:opacity .7s ease;
+}
+#fade.on{opacity:1;pointer-events:all}
+
+/* ── NOAH ENCOUNTER ── */
+#encounter{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#0f1f40 0%,#000 100%);
+}
+#encounter.on{display:flex}
+.enc-icon{font-size:5rem;animation:float 3s ease-in-out infinite;margin-bottom:16px}
+.enc-title{font-size:2.4rem;color:#60a5fa;text-shadow:0 0 30px #3b82f6;margin-bottom:10px;animation:glow 2s infinite}
+.enc-sub{font-size:1rem;color:#94a3b8;max-width:380px;text-align:center;line-height:1.8;margin-bottom:36px}
+.enc-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn{
+  background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:28px;
+  color:#fff;font-family:'Jua',sans-serif;font-size:1.1rem;padding:13px 36px;
+  cursor:pointer;pointer-events:all;transition:transform .18s,box-shadow .18s;
+}
+.btn:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(99,102,241,.6)}
+.btn.sec{background:rgba(30,41,59,.9);border:2px solid #475569}
+
+/* ── PORTAL ENTER SCREEN ── */
+#zone-enter{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,#1a0f2e 0%,#000 100%);
+}
+#zone-enter.on{display:flex}
+.ze-emoji{font-size:4rem;animation:float 2s ease-in-out infinite;margin-bottom:14px}
+.ze-title{font-size:2rem;color:#a78bfa;margin-bottom:8px}
+.ze-days{font-size:1rem;color:#64748b;margin-bottom:32px}
+
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes glow{0%,100%{text-shadow:0 0 20px #3b82f6}50%{text-shadow:0 0 50px #60a5fa}}
+</style>
+</head>
+<body>
+
+<div id="c"></div>
+
+<div id="ui">
+  <div id="zone-bar">🏫 학교 입구</div>
+
+  <div id="stat-panel">
+    <h2>채원의 학교생활</h2>
+    <div class="sr"><span>현재 위치</span><span class="sv" id="s-loc" style="color:#60a5fa">학교 입구</span></div>
+    <div class="sr"><span>진행 Day</span><span class="sv" id="s-day" style="color:#f59e0b">시작 전</span></div>
+  </div>
+
+  <div id="journey">
+    <h3>📍 여정 진행도</h3>
+    <div class="jz" id="jz-entrance" style="color:#60a5fa">● 🏫 학교 입구 (현재)</div>
+    <div class="jz" id="jz-classroom" style="color:#475569">○ 📚 교실 (Day 1~10)</div>
+    <div class="jz" id="jz-playground" style="color:#475569">○ ⚽ 운동장 (Day 11~20)</div>
+    <div class="jz" id="jz-library" style="color:#475569">○ 📖 도서관 (Day 21~30)</div>
+  </div>
+
+  <div id="mmap">
+    <div id="mmap-track"></div>
+    <div class="mzone" style="left:0;width:20%;background:#3b82f6"></div>
+    <div class="mzone" style="left:26%;width:24%;background:#f59e0b"></div>
+    <div class="mzone" style="left:57%;width:20%;background:#22c55e"></div>
+    <div class="mzone" style="left:83%;width:17%;background:#a855f7"></div>
+    <div id="mplayer" style="left:4%"></div>
+    <div class="mlabel" style="left:10%">입구</div>
+    <div class="mlabel" style="left:38%">교실</div>
+    <div class="mlabel" style="left:67%">운동장</div>
+    <div class="mlabel" style="left:92%">도서관</div>
+  </div>
+
+  <div id="hint"><span id="hint-txt">E 키 → 상호작용</span></div>
+
+  <div id="ctrl">
+    <kbd>←</kbd><kbd>→</kbd> 이동
+    <span class="sep">|</span>
+    <kbd>Space</kbd> 점프
+    <span class="sep">|</span>
+    <kbd>E</kbd> 상호작용
+  </div>
+</div>
+
+<!-- Mobile touch controls -->
+<div id="mobile-ctrl">
+  <div id="dpad">
+    <div class="dp-btn" id="btn-left">‹</div>
+    <div class="dp-btn" id="btn-right">›</div>
+  </div>
+  <div id="act-btns">
+    <div class="act-btn" id="btn-interact">
+      <span class="act-icon">⚡</span>상호작용
+    </div>
+    <div class="act-btn" id="btn-jump">
+      <span class="act-icon">↑</span>점프
+    </div>
+  </div>
+</div>
+
+<div id="fade"></div>
+
+<!-- Noah encounter -->
+<div id="encounter">
+  <div class="enc-icon">🤖</div>
+  <div class="enc-title">노아를 처음 만났습니다!</div>
+  <div class="enc-sub">
+    "안녕, 채원아. 나는 노아야.<br>
+    앞으로 30일간 너의 학교생활을 함께하게 됐어.<br>
+    우리, 잘 지낼 수 있을까?"
+  </div>
+  <div class="enc-btns">
+    <button class="btn" onclick="goToApp()">✨ 시뮬레이션 시작 (Day 1)</button>
+    <button class="btn sec" onclick="closeEncounter()">← 월드맵으로 돌아가기</button>
+  </div>
+</div>
+
+<!-- Zone enter screen -->
+<div id="zone-enter">
+  <div class="ze-emoji" id="ze-emoji">📚</div>
+  <div class="ze-title" id="ze-title">교실</div>
+  <div class="ze-days" id="ze-days">Day 1 ~ 10</div>
+  <button class="btn" id="ze-btn" onclick="confirmZoneEnter()">입장하기</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// WORLD CONFIG
+// ═══════════════════════════════════════════════
+const ZONES = [
+  { id:'entrance',   emoji:'🏫', name:'학교 입구', days:null,
+    x0:-20, x1:50,  floor:0x1a2744, accent:0x3b82f6, fog:0x090e1c },
+  { id:'classroom',  emoji:'📚', name:'교실',     days:'1~10',
+    x0:60,  x1:145, floor:0x2a1806, accent:0xf59e0b, fog:0x160d04 },
+  { id:'playground', emoji:'⚽', name:'운동장',   days:'11~20',
+    x0:170, x1:260, floor:0x0d2012, accent:0x22c55e, fog:0x061408 },
+  { id:'library',    emoji:'📖', name:'도서관',   days:'21~30',
+    x0:280, x1:370, floor:0x160c24, accent:0xa855f7, fog:0x0c0618 },
+];
+const PORTALS = [
+  { x:52,  to:'classroom',  label:'📚 교실로 이동' },
+  { x:157, to:'playground', label:'⚽ 운동장으로 이동' },
+  { x:268, to:'library',    label:'📖 도서관으로 이동' },
+];
+const NOAH_X = 18;
+const WORLD_END = 375;
+const WORLD_START = -20;
+
+// ═══════════════════════════════════════════════
+// THREE.JS SETUP
+// ═══════════════════════════════════════════════
+const cont = document.getElementById('c');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x090e1c);
+scene.fog = new THREE.FogExp2(0x090e1c, 0.011);
+
+const camera = new THREE.PerspectiveCamera(65, innerWidth/innerHeight, 0.1, 500);
+camera.position.set(3, 8, 18);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+cont.appendChild(renderer.domElement);
+
+// Lights
+scene.add(new THREE.AmbientLight(0x304060, 2));
+const sun = new THREE.DirectionalLight(0xfff5e0, 1.2);
+sun.position.set(40, 70, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
+Object.assign(sun.shadow.camera, { left:-80, right:80, top:40, bottom:-10 });
+scene.add(sun);
+const pLight = new THREE.PointLight(0x6366f1, 1.5, 20);
+scene.add(pLight);
+
+// ═══════════════════════════════════════════════
+// MATERIALS
+// ═══════════════════════════════════════════════
+function mat(c, r=0.6, m=0){ return new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m}); }
+function bmat(c){ return new THREE.MeshBasicMaterial({color:c}); }
+const M = {
+  white:  mat(0xe2e8f0, .2, .8),
+  slate:  mat(0x1e293b, .9),
+  blue:   bmat(0x3b82f6),
+  purple: bmat(0xa855f7),
+  green:  bmat(0x22c55e),
+  gold:   bmat(0xfacc15),
+  cyan:   bmat(0x0ea5e9),
+  glass:  new THREE.MeshStandardMaterial({color:0x7dd3fc,transparent:true,opacity:.28,roughness:0}),
+};
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function box(w,h,d){ return new THREE.BoxGeometry(w,h,d); }
+function mesh(g,m,sx,sy,sz, cast=false){
+  const o = new THREE.Mesh(g,m);
+  o.position.set(sx,sy,sz);
+  if(cast) o.castShadow=true;
+  o.receiveShadow=true;
+  return o;
+}
+function add(p,g,m,x,y,z,cast=false){ const o=mesh(g,m,x,y,z,cast); p.add(o); return o; }
+
+function getZone(x){
+  return ZONES.find(z=> x>=z.x0 && x<z.x1) || ZONES[0];
+}
+
+// ═══════════════════════════════════════════════
+// GROUND
+// ═══════════════════════════════════════════════
+const world = new THREE.Group();
+scene.add(world);
+
+(function buildGround(){
+  const TW = 8;
+  for(let i=-3; i<Math.ceil((WORLD_END-WORLD_START)/TW)+2; i++){
+    const cx = WORLD_START + i*TW + TW/2;
+    const z = getZone(cx);
+    const m = mat(z.floor, .7, .2);
+    const tile = mesh(box(TW-.08,.7,6.5),m, cx,-.35,0);
+    tile.receiveShadow=true;
+    world.add(tile);
+    // neon edges
+    const em = new THREE.MeshBasicMaterial({color:z.accent});
+    world.add(mesh(box(TW-.08,.06,.1),em, cx,.05,-3.15));
+    world.add(mesh(box(TW-.08,.06,.1),em, cx,.05, 3.15));
+  }
+})();
+
+// ═══════════════════════════════════════════════
+// ENTRANCE ZONE
+// ═══════════════════════════════════════════════
+(function buildEntrance(){
+  // Gate pillars
+  [-3,3].forEach(z=>{
+    world.add(mesh(box(1.2,9,1.2), mat(0x1e293b,.9), -16,4.5,z, true));
+    world.add(mesh(box(1.6,.4,1.6), M.blue, -16,9.2,z));
+  });
+  world.add(mesh(box(.4,.4,6.4), M.blue, -16,9.4,0)); // crossbar
+  // Sign
+  world.add(mesh(box(5,1.2,.25), mat(0x1e3a5f,.5), -16,10.5,0));
+  // Trees
+  function tree(x,z){
+    world.add(mesh(new THREE.CylinderGeometry(.3,.4,2.5,6), mat(0x5c3317,.9), x,1.25,z, true));
+    [[0,1.9],[1.1,2.9],[2,3.7]].forEach(([yo,size])=>{
+      const s = 1.7-yo*.3;
+      world.add(mesh(new THREE.SphereGeometry(s,6,5), mat(0x166534+Math.floor(yo*0x010000)*.05|0,.9), x,3+yo,z, true));
+    });
+  }
+  for(let i=0;i<3;i++){ tree(-19-i*3, 4); tree(-19-i*3,-4); }
+  // Benches
+  function bench(x){
+    world.add(mesh(box(3,.15,1), mat(0x78350f,.7), x,.9,0));
+    world.add(mesh(box(3,.9,.15), mat(0x78350f,.7), x,.6,-.45));
+    [[-1.3,0],[1.3,0]].forEach(([bx,bz])=>{
+      world.add(mesh(box(.15,.9,.15),mat(0x4a2f0a,.8), x+bx,.45,-.4));
+      world.add(mesh(box(.15,.9,.15),mat(0x4a2f0a,.8), x+bx,.45, .4));
+    });
+  }
+  bench(-5); bench(5);
+})();
+
+// ═══════════════════════════════════════════════
+// CORRIDOR (entrance→classroom transition)
+// ═══════════════════════════════════════════════
+(function buildCorridor(){
+  const s=25,e=60;
+  for(let x=s;x<e;x+=5){
+    const cx=x+2.4;
+    world.add(mesh(box(4.9,5,.3), mat(0x1e2a3d,.8), cx,2.5,-3.3));
+    world.add(mesh(box(4.9,5,.3), mat(0x1e2a3d,.8), cx,2.5, 3.3));
+    world.add(mesh(box(.9,.1,4.8), bmat(0xfde68a), cx,4.9,0)); // ceiling light
+    if((x-s)%10===0){
+      world.add(mesh(box(2.8,2,.1), M.glass, cx,2.5,-3.25));
+    }
+  }
+})();
+
+// ═══════════════════════════════════════════════
+// CLASSROOM
+// ═══════════════════════════════════════════════
+(function buildClassroom(){
+  const s=60,e=145;
+  // Chalkboard
+  world.add(mesh(box(.2,3.2,9), mat(0x064e3b,.9), s+5,2.5,0));
+  world.add(mesh(box(.15,3.6,9.4), mat(0x78350f,.8), s+4.85,2.5,0));
+  // Desks
+  const dmr = mat(0x78350f,.7);
+  const dlr = mat(0x4a2f0a,.8);
+  for(let col=0;col<5;col++){
+    for(let row=0;row<3;row++){
+      const dx=s+25+col*16, dz=(row-1)*1.5;
+      if(Math.abs(dz)>2.8) continue;
+      world.add(mesh(box(2.8,.15,1.3),dmr, dx,1.1,dz, true));
+      [[-1.1,-.5],[-1.1,.5],[1.1,-.5],[1.1,.5]].forEach(([lx,lz])=>{
+        world.add(mesh(box(.12,1.1,.12),dlr, dx+lx,.55,dz+lz));
+      });
+    }
+  }
+  // Windows (right wall only)
+  for(let wx=s+10;wx<e;wx+=20){
+    world.add(mesh(box(.1,2.4,3), M.glass, wx+.05,2.5,-3.25));
+  }
+  // Ceiling lights
+  for(let lx=s+10;lx<e;lx+=15){
+    world.add(mesh(box(1,.08,5), bmat(0xfde68a), lx,4.9,0));
+  }
+})();
+
+// ═══════════════════════════════════════════════
+// PLAYGROUND
+// ═══════════════════════════════════════════════
+(function buildPlayground(){
+  const s=170,e=260;
+  // Grass overlay
+  const g=new THREE.Mesh(new THREE.PlaneGeometry(e-s,12), mat(0x166534,1));
+  g.rotation.x=-Math.PI/2; g.position.set((s+e)/2,0.01,0);
+  world.add(g);
+  // Painted lines
+  const lm=bmat(0xffffff);
+  world.add(mesh(box((e-s),.02,.15),lm, (s+e)/2,.02,0));
+  world.add(mesh(box(.02,.02,12),lm, (s+e)/2,.02,0));
+  // Goal posts
+  function goal(x){
+    const pm=mat(0xffffff,.3);
+    world.add(mesh(new THREE.CylinderGeometry(.12,.12,4,8),pm, x,2,-3));
+    world.add(mesh(new THREE.CylinderGeometry(.12,.12,4,8),pm, x,2, 3));
+    world.add(mesh(new THREE.CylinderGeometry(.09,.09,6.2,8),pm, x,4,0).setRotationFromEuler?? (()=>{
+      const o=mesh(new THREE.CylinderGeometry(.09,.09,6.2,8),pm,x,4,0);
+      o.rotation.x=Math.PI/2; return o;
+    })());
+  }
+  // Simpler goal posts
+  function goalPost(x){
+    const pm=mat(0xffffff,.3);
+    const lp=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,4,8),pm);
+    lp.position.set(x,2,-2.8); world.add(lp);
+    const rp=lp.clone(); rp.position.set(x,2,2.8); world.add(rp);
+    const cb=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,5.9,8),pm);
+    cb.rotation.x=Math.PI/2; cb.position.set(x,4,0); world.add(cb);
+  }
+  goalPost(s+15); goalPost(e-15);
+  // Trees perimeter
+  function tree(x,z){
+    world.add(mesh(new THREE.CylinderGeometry(.3,.4,2.5,6), mat(0x5c3317,.9), x,1.25,z, true));
+    world.add(mesh(new THREE.SphereGeometry(1.5,6,5), mat(0x166534,.9), x,4,z, true));
+    world.add(mesh(new THREE.SphereGeometry(1.1,6,5), mat(0x15803d,.9), x,5.2,z, true));
+  }
+  for(let i=0;i<6;i++){ tree(s+12+i*14, 5.5); tree(s+12+i*14,-5.5); }
+})();
+
+// ═══════════════════════════════════════════════
+// LIBRARY
+// ═══════════════════════════════════════════════
+(function buildLibrary(){
+  const s=280,e=370;
+  const bookColors=[0xdc2626,0x2563eb,0x16a34a,0xd97706,0x7c3aed,0x0891b2,0xdb2777];
+  for(let i=0;i<5;i++){
+    const sx=s+20+i*16;
+    world.add(mesh(box(.3,5.5,5.5), mat(0x3c1a08,.8), sx,2.75,0, true));
+    // Books
+    for(let b=0;b<18;b++){
+      const bh=.55+Math.random()*.4;
+      const bk=new THREE.Mesh(box(.14+Math.random()*.08,bh,.28+Math.random()*.3),
+        mat(bookColors[b%bookColors.length],.7));
+      bk.position.set(sx+.22+Math.random()*.04-.02,
+        .7+Math.floor(b/6)*1.7+bh/2,
+        -2+(b%6)*.8);
+      world.add(bk);
+    }
+  }
+  // Round reading table
+  world.add(mesh(new THREE.CylinderGeometry(2.5,2.5,.15,16), mat(0x5c2d0a,.6), s+5,1.1,0, true));
+  const legM=mat(0x3c1a08,.8);
+  [[-1.5,0],[1.5,0],[0,-1.5],[0,1.5]].forEach(([lx,lz])=>{
+    world.add(mesh(new THREE.CylinderGeometry(.1,.1,1.1,6),legM, s+5+lx,.55,lz));
+  });
+  // Study lamps
+  for(let i=0;i<3;i++){
+    const lamp=new THREE.PointLight(0xfde68a,.9,14);
+    lamp.position.set(s+20+i*16,5,0);
+    world.add(lamp);
+  }
+  // Ceiling decoration
+  for(let cx=s+8;cx<e;cx+=18){
+    world.add(mesh(box(1,.06,5.5), bmat(0xc084fc), cx,4.9,0));
+  }
+})();
+
+// ═══════════════════════════════════════════════
+// PORTALS
+// ═══════════════════════════════════════════════
+const portalMeshes=[];
+(function buildPortals(){
+  PORTALS.forEach(p=>{
+    const g=new THREE.Group();
+    g.position.x=p.x;
+    const fm=bmat(0xa855f7);
+    // Pillars
+    const lp=mesh(box(.3,5.2,.3),fm, 0,2.6,-2.3); g.add(lp);
+    const rp=lp.clone(); rp.position.z=2.3; g.add(rp);
+    g.add(mesh(box(.3,.3,5),fm, 0,5.25,0));
+    // Surface
+    const sg=new THREE.PlaneGeometry(5,5.2);
+    const sm=new THREE.MeshBasicMaterial({color:0x6d28d9,transparent:true,opacity:.22,side:THREE.DoubleSide});
+    const surf=new THREE.Mesh(sg,sm);
+    surf.rotation.y=Math.PI/2; surf.position.y=2.6; g.add(surf);
+    // Particles
+    const ps=[];
+    for(let i=0;i<22;i++){
+      const pt=mesh(new THREE.SphereGeometry(.07,4,4), bmat(0xc084fc),
+        (Math.random()-.5)*.4, Math.random()*5+.3, (Math.random()-.5)*5.2);
+      pt.userData={spd:Math.random()*.02+.008,off:Math.random()*Math.PI*2,baseY:pt.position.y};
+      g.add(pt); ps.push(pt);
+    }
+    world.add(g);
+    portalMeshes.push({g,sm,ps,data:p});
+  });
+})();
+
+// ═══════════════════════════════════════════════
+// NOAH NPC
+// ═══════════════════════════════════════════════
+let noahG;
+(function buildNoah(){
+  noahG=new THREE.Group();
+  noahG.position.set(NOAH_X,1.2,0);
+  // Body
+  add(noahG,box(1.2,1.4,.8), M.white, 0,0,0, true);
+  // Head
+  add(noahG,box(1.1,1.1,.9), M.white, 0,1.25,0, true);
+  // Screen
+  add(noahG,new THREE.PlaneGeometry(.88,.56), M.cyan, 0,1.3,.46);
+  // Eyes
+  const em=bmat(0xffffff);
+  [-0.2,.2].forEach(x=>add(noahG,new THREE.CircleGeometry(.1,8),em, x,1.37,.47));
+  // Arms
+  const am=mat(0xcbd5e1,.3,.7);
+  [-0.72,.72].forEach(x=>add(noahG,box(.25,.9,.25),am, x,-.2,0));
+  // Legs
+  [-0.28,.28].forEach(x=>add(noahG,box(.3,.7,.3),am, x,-1.0,0));
+  // Hover glow base
+  add(noahG,new THREE.CylinderGeometry(.8,1.2,.1,12),
+    new THREE.MeshBasicMaterial({color:0x0ea5e9,transparent:true,opacity:.35}), 0,-1.45,0);
+  // Point light
+  const nl=new THREE.PointLight(0x0ea5e9,1.6,10);
+  nl.position.y=1; noahG.add(nl);
+  // "!" marker
+  const ex=new THREE.Mesh(box(.22,.7,.1), bmat(0xfacc15));
+  ex.position.y=3.3; ex.name='exclam'; noahG.add(ex);
+  const exDot=new THREE.Mesh(new THREE.SphereGeometry(.12,6,6), bmat(0xfacc15));
+  exDot.position.set(0,2.8,0); exDot.name='exclamdot'; noahG.add(exDot);
+
+  world.add(noahG);
+})();
+
+// ═══════════════════════════════════════════════
+// PLAYER (채원)
+// ═══════════════════════════════════════════════
+let playerG, playerLegs=[];
+(function buildPlayer(){
+  playerG=new THREE.Group();
+  playerG.position.set(-8,1.0,0);
+  // Uniform
+  add(playerG,box(.9,1.1,.55), mat(0x1d4ed8,.7), 0,0,0, true);
+  // Head
+  add(playerG,box(.8,.8,.7), mat(0xfce7f3,.5), 0,1.0,0, true);
+  // Hair
+  add(playerG,box(.9,.35,.72), mat(0x1a0a02,.9), 0,1.48,0);
+  // Eyes
+  const em=bmat(0x1a0a02);
+  [-0.17,.17].forEach(x=>add(playerG,box(.19,.12,.05),em, x,1.02,.36));
+  // Legs
+  const lm=mat(0x1e3a5f,.7);
+  [-0.2,.2].forEach((x,i)=>{
+    const leg=new THREE.Mesh(box(.3,.75,.32),lm);
+    leg.position.set(x,-.93,0); playerG.add(leg); playerLegs.push(leg);
+  });
+  // Shoes
+  const sm2=mat(0x0f172a,.5);
+  [-0.2,.2].forEach(x=>add(playerG,box(.32,.2,.45),sm2, x,-1.4,.07));
+  // Backpack
+  add(playerG,box(.55,.7,.25), mat(0x7c3aed,.6), 0,.05,-.38);
+  world.add(playerG);
+})();
+
+// ═══════════════════════════════════════════════
+// BACKGROUND FLOATERS
+// ═══════════════════════════════════════════════
+const floaters=[];
+(function buildBG(){
+  const geos=[
+    new THREE.BoxGeometry(1.5,1.5,1.5),
+    new THREE.TetrahedronGeometry(1),
+    new THREE.OctahedronGeometry(.9),
+  ];
+  for(let i=0;i<90;i++){
+    const g=geos[i%geos.length];
+    const m=new THREE.MeshStandardMaterial({
+      color:new THREE.Color().setHSL(Math.random(),.65,.4),
+      transparent:true,opacity:.55+Math.random()*.3,roughness:.3,
+    });
+    const o=new THREE.Mesh(g,m);
+    const front=Math.random()>.78;
+    o.position.set(
+      Math.random()*400-22,
+      Math.random()*18+7,
+      front?(Math.random()*9+4):-(Math.random()*35+8)
+    );
+    o.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+    scene.add(o);
+    floaters.push({o,rx:(Math.random()-.5)*.01,ry:(Math.random()-.5)*.01,
+      spd:Math.random()*.006+.003,base:o.position.y,off:Math.random()*Math.PI*2});
+  }
+})();
+
+// ═══════════════════════════════════════════════
+// CONTROLS & PHYSICS
+// ═══════════════════════════════════════════════
+const keys={};
+window.addEventListener('keydown',e=>{
+  keys[e.key]=true;
+  if(e.key===' '&&phys.grounded){ phys.vy=phys.jumpF; phys.grounded=false; }
+  if(e.key==='e'||e.key==='E') interact();
+});
+window.addEventListener('keyup',e=>{ keys[e.key]=false; });
+
+// ── Mobile button controls ──
+function bindBtn(id, downFn, upFn){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const press=e=>{ e.preventDefault(); el.classList.add('pressed'); if(downFn)downFn(); };
+  const release=e=>{ el.classList.remove('pressed'); if(upFn)upFn(); };
+  el.addEventListener('touchstart',press,{passive:false});
+  el.addEventListener('touchend',release,{passive:false});
+  el.addEventListener('touchcancel',release,{passive:false});
+  el.addEventListener('mousedown',press);
+  el.addEventListener('mouseup',release);
+  el.addEventListener('mouseleave',release);
+}
+bindBtn('btn-left',
+  ()=>keys['ArrowLeft']=true,
+  ()=>keys['ArrowLeft']=false
+);
+bindBtn('btn-right',
+  ()=>keys['ArrowRight']=true,
+  ()=>keys['ArrowRight']=false
+);
+bindBtn('btn-jump', ()=>{
+  if(phys.grounded){ phys.vy=phys.jumpF; phys.grounded=false; }
+}, null);
+bindBtn('btn-interact', ()=>interact(), null);
+
+const phys={vx:0,vy:0,grounded:false,gravity:-.02,jumpF:.38,friction:.90};
+
+// ═══════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════
+const state={
+  zone:'entrance',
+  met:false,
+  unlocked:new Set(['entrance']),
+  time:0,
+  pendingPortal:null,
+};
+
+// ═══════════════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════════════
+function interact(){
+  if(!state.met && Math.abs(playerG.position.x-NOAH_X)<6){
+    triggerNoah(); return;
+  }
+  PORTALS.forEach(p=>{
+    if(Math.abs(playerG.position.x-p.x)<5) enterPortal(p);
+  });
+}
+
+function triggerNoah(){
+  if(state.met) return;
+  state.met=true;
+  fadeOut(()=>{
+    document.getElementById('encounter').classList.add('on');
+    fadeIn();
+  });
+}
+
+let pendingPortalData=null;
+function enterPortal(p){
+  pendingPortalData=p;
+  const zone=ZONES.find(z=>z.id===p.to);
+  if(!zone) return;
+  document.getElementById('ze-emoji').textContent=zone.emoji;
+  document.getElementById('ze-title').textContent=zone.name;
+  document.getElementById('ze-days').textContent=zone.days?`Day ${zone.days}`:'탐험 구역';
+  fadeOut(()=>{
+    document.getElementById('zone-enter').classList.add('on');
+    fadeIn();
+  });
+}
+
+function confirmZoneEnter(){
+  const p=pendingPortalData;
+  if(!p) return;
+  document.getElementById('zone-enter').classList.remove('on');
+  const zone=ZONES.find(z=>z.id===p.to);
+  if(!zone) return;
+  fadeOut(()=>{
+    playerG.position.x=zone.x0+5;
+    phys.vx=0;
+    state.unlocked.add(zone.id);
+    updateZoneUI(zone);
+    fadeIn();
+  });
+}
+
+function goToApp(){ window.location.href='index.html'; }
+function closeEncounter(){
+  document.getElementById('encounter').classList.remove('on');
+  state.met=true; // keeps flag but allows world
+}
+
+function fadeOut(cb){
+  const f=document.getElementById('fade');
+  f.classList.add('on');
+  setTimeout(()=>{ if(cb)cb(); },700);
+}
+function fadeIn(){
+  setTimeout(()=>document.getElementById('fade').classList.remove('on'),50);
+}
+
+// ═══════════════════════════════════════════════
+// UI UPDATE
+// ═══════════════════════════════════════════════
+function updateZoneUI(zone){
+  document.getElementById('zone-bar').textContent=`${zone.emoji} ${zone.name}`;
+  document.getElementById('s-loc').textContent=zone.name;
+  document.getElementById('s-day').textContent=zone.days?`Day ${zone.days}`:'시작 전';
+  scene.fog.color.setHex(zone.fog);
+  scene.background.setHex(zone.fog);
+  // Journey list
+  ZONES.forEach(z=>{
+    const el=document.getElementById(`jz-${z.id}`);
+    if(!el) return;
+    if(z.id===zone.id){
+      el.style.color='#60a5fa';
+      el.textContent=`● ${z.emoji} ${z.name} (현재)`;
+    } else if(state.unlocked.has(z.id)){
+      el.style.color='#22c55e';
+      el.textContent=`✓ ${z.emoji} ${z.name}`;
+    } else {
+      el.style.color='#475569';
+      el.textContent=`○ ${z.emoji} ${z.name}`;
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// ANIMATION LOOP
+// ═══════════════════════════════════════════════
+function animate(){
+  requestAnimationFrame(animate);
+  state.time+=.016;
+  const t=state.time;
+
+  // ── PLAYER PHYSICS ──
+  const spd=.030;
+  if(keys['ArrowRight']) phys.vx=Math.min(phys.vx+spd, .55);
+  if(keys['ArrowLeft'])  phys.vx=Math.max(phys.vx-spd*1.3, -.28);
+  phys.vx*=phys.friction;
+  phys.vy+=phys.gravity;
+  playerG.position.x=Math.max(WORLD_START,Math.min(WORLD_END,playerG.position.x+phys.vx));
+  playerG.position.y+=phys.vy;
+  if(playerG.position.y<=1.0){ playerG.position.y=1.0; phys.vy=0; phys.grounded=true; }
+
+  // Player tilt + walk cycle
+  playerG.rotation.z=-phys.vx*.28;
+  const wc=Math.sin(t*9)*Math.abs(phys.vx)*5;
+  if(playerLegs[0]) playerLegs[0].rotation.x=wc;
+  if(playerLegs[1]) playerLegs[1].rotation.x=-wc;
+  // Face direction
+  if(Math.abs(phys.vx)>.005) playerG.scale.x=phys.vx>0?1:-1;
+
+  // ── NOAH ──
+  const nf=Math.sin(t*1.4)*.15;
+  noahG.position.y=1.2+nf;
+  noahG.rotation.y=Math.sin(t*.5)*.18;
+  // Exclamation bob
+  const ex=noahG.getObjectByName('exclam');
+  if(ex){ ex.position.y=3.3+Math.sin(t*3)*.15; }
+
+  // ── PORTALS ──
+  portalMeshes.forEach(({sm,ps},i)=>{
+    sm.opacity=.18+Math.sin(t*2+i)*.08;
+    ps.forEach(pt=>{ pt.position.y=pt.userData.baseY+Math.sin(t*pt.userData.spd*60+pt.userData.off)*.2; });
+  });
+
+  // ── FLOATERS ──
+  floaters.forEach(f=>{
+    f.o.rotation.x+=f.rx; f.o.rotation.y+=f.ry;
+    f.o.position.y=f.base+Math.sin(t*f.spd*50+f.off)*.6;
+  });
+
+  // ── PROXIMITY HINTS ──
+  const hint=document.getElementById('hint');
+  const htxt=document.getElementById('hint-txt');
+  const nd=Math.abs(playerG.position.x-NOAH_X);
+  let showHint=false;
+  if(!state.met && nd<6){
+    htxt.textContent='🤖 노아 발견! E 키로 대화하기';
+    showHint=true;
+  } else {
+    PORTALS.forEach(p=>{
+      if(Math.abs(playerG.position.x-p.x)<5){
+        htxt.textContent=`🌀 포털: ${p.label} | E 키로 이동`;
+        showHint=true;
+      }
+    });
+  }
+  hint.classList.toggle('on',showHint);
+
+  // Auto-trigger Noah on very close approach
+  if(!state.met && nd<2.5) triggerNoah();
+
+  // ── ZONE CHANGE ──
+  const cz=getZone(playerG.position.x);
+  if(cz && cz.id!==state.zone){
+    state.zone=cz.id;
+    if(!state.unlocked.has(cz.id)) state.unlocked.add(cz.id);
+    updateZoneUI(cz);
+  }
+
+  // ── LIGHTS FOLLOW PLAYER ──
+  pLight.position.set(playerG.position.x,playerG.position.y+3,2);
+  sun.position.x=playerG.position.x+40;
+  sun.target.position.x=playerG.position.x;
+  sun.target.updateMatrixWorld();
+
+  // ── DYNAMIC 2.5D CAMERA ──
+  const sf=Math.abs(phys.vx);
+  const tx=playerG.position.x+4+phys.vx*14;
+  const ty=playerG.position.y+5+sf*5;
+  const tz=14+sf*22;
+  camera.position.x+=(tx-camera.position.x)*.06;
+  camera.position.y+=(ty-camera.position.y)*.05;
+  camera.position.z+=(tz-camera.position.z)*.025;
+  camera.lookAt(playerG.position.x+2, playerG.position.y+1, 0);
+
+  // Minimap player
+  const prog=(playerG.position.x-WORLD_START)/(WORLD_END-WORLD_START+10);
+  document.getElementById('mplayer').style.left=`${Math.min(95,Math.max(4,prog*100))}%`;
+
+  renderer.render(scene,camera);
+}
+
+// ═══════════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════════
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+// ═══════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════
+updateZoneUI(ZONES[0]);
+animate();
+</script>
+</body>
+</html>

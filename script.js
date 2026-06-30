@@ -400,7 +400,7 @@ const scenarioData = {
     },
     {
       dayId: 10, chapter: 1, title: "Day 10: 황당한 연애 상담",
-      background: "bg_classroom",
+      background: "bg_corridor",
       character: "noah_selected",
       minigame: "love_beam",
       dialogues: [
@@ -5379,7 +5379,7 @@ function showMgCinemaMode(onComplete) {
       o.connect(g);g.connect(padCtx.destination);
       o.type='sine';o.frequency.value=f;
       const t=padCtx.currentTime+i*0.45;
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.016,t+1.8);
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.020,t+1.8);
       o.start(t);
     });
     window._cinemaPadCtx = padCtx;
