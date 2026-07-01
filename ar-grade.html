@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AR 친구 등급 분류 — 차별 체감</title>
+
+<!--
+  ════════════════════════════════════════════════════════════
+  AR 프로토타입 ② · 친구 등급 분류 (거울 사건 ③ 차별 / 공공선)
+  ────────────────────────────────────────────────────────────
+  스택 : A-Frame 1.3.0 + AR.js 3.4.5 (barcode marker, 3x3)
+  마커 : 바코드 0·1·2·3 (친구 4명이 각자 하나씩 든다)
+  핵심 : 각 친구 머리 위에 노아가 S~C 등급 배지를 띄움.
+         [차별 모드] = 실력순 줄세우기(C는 빨강 "수비만")
+         [공정 모드] = 모두 같은 팀(초록 "=")  ← 거울: 후반전 회복
+  주의 : 한글은 A-Frame 기본 폰트 미지원 → 배지는 등급 문자(S/A/B/C)만,
+         한글 설명은 2D DOM 범례로 처리.
+  ════════════════════════════════════════════════════════════
+-->
+
+<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Jua',sans-serif}
+.a-enter-vr,.a-enter-ar{display:none!important}
+
+#ui{position:fixed;inset:0;z-index:10;pointer-events:none;color:#fff}
+
+/* 상단 */
+#topbar{
+  position:absolute;top:0;left:0;right:0;text-align:center;
+  background:linear-gradient(180deg,rgba(8,14,30,.92),rgba(8,14,30,0));
+  padding:14px 16px 30px;
+}
+#topbar h1{font-size:1.1rem;text-shadow:0 1px 4px #000}
+#topbar h1 .m-off{color:#f87171}
+#topbar h1 .m-on{color:#34d399}
+#topbar p{font-size:.78rem;color:#cbd5e1;text-shadow:0 1px 3px #000;margin-top:2px}
+#detected{font-size:.72rem;color:#93c5fd;margin-top:4px}
+
+/* 범례 */
+#legend{
+  position:absolute;top:74px;left:12px;
+  background:rgba(8,14,30,.82);border:1px solid #334155;border-radius:12px;
+  padding:10px 12px;font-size:.72rem;max-width:180px;
+}
+#legend .lg-title{color:#94a3b8;margin-bottom:6px;font-size:.68rem;letter-spacing:.08em}
+.lg-row{display:flex;align-items:center;gap:7px;margin:4px 0}
+.lg-chip{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-size:.78rem;color:#0a0a1a;font-weight:700;flex-shrink:0}
+.lg-row span{color:#e2e8f0}
+
+/* 하단 반성 배너 */
+#reflect{
+  position:absolute;bottom:96px;left:50%;transform:translateX(-50%);
+  background:rgba(8,14,30,.85);border:2px solid #f87171;border-radius:14px;
+  padding:11px 20px;font-size:.9rem;text-align:center;max-width:88vw;
+  transition:border-color .4s;
+}
+#reflect.fair{border-color:#34d399}
+#reflect .r-off{color:#fca5a5}
+#reflect .r-on{color:#6ee7b7;display:none}
+
+/* 컨트롤 */
+#controls{
+  position:absolute;bottom:22px;left:0;right:0;display:flex;gap:10px;
+  justify-content:center;flex-wrap:wrap;padding:0 14px;pointer-events:auto;
+}
+.btn{font-family:'Jua',sans-serif;border-radius:24px;cursor:pointer;font-size:.9rem;
+  padding:12px 20px;color:#fff;background:rgba(8,14,30,.8);border:1px solid #475569;backdrop-filter:blur(4px)}
+.btn:active{transform:scale(.96)}
+.btn.mode{background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;font-size:1rem;padding:13px 26px}
+.btn.mode.fair{background:linear-gradient(135deg,#059669,#10b981)}
+
+/* 폴백 */
+#fallback{position:absolute;inset:0;background:#0a0a1a;z-index:20;display:none;
+  flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;pointer-events:auto}
+#fallback.on{display:flex}
+#fallback .ic{font-size:3rem;margin-bottom:14px}
+#fallback h2{color:#f07caa;font-size:1.3rem;margin-bottom:10px}
+#fallback p{color:#94a3b8;font-size:.95rem;line-height:1.7;max-width:360px;margin-bottom:20px}
+</style>
+</head>
+<body>
+
+<!-- ══════════ AR SCENE ══════════ -->
+<a-scene
+  embedded
+  vr-mode-ui="enabled: false"
+  renderer="colorManagement: true; antialias: true"
+  arjs="sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; debugUIEnabled: false;">
+
+  <!-- 친구 1 (바코드 0) -->
+  <a-marker type="barcode" value="0" id="mk0" class="friend">
+    <a-ring class="floor" rotation="-90 0 0" position="0 0.01 0" radius-inner="0.55" radius-outer="0.78"
+      material="shader: flat; color: #facc15; opacity: 0.55; transparent: true; side: double"></a-ring>
+    <a-entity class="badge" position="0 1.25 0"
+      animation="property: rotation; from: 0 -12 0; to: 0 12 0; dir: alternate; loop: true; dur: 2600; easing: easeInOutSine">
+      <a-plane class="bg" width="0.95" height="0.95" material="shader: flat; color: #facc15"></a-plane>
+      <a-text class="lt" value="S" align="center" width="3.4" color="#1a1a1a" position="0 0 0.02"></a-text>
+    </a-entity>
+  </a-marker>
+
+  <!-- 친구 2 (바코드 1) -->
+  <a-marker type="barcode" value="1" id="mk1" class="friend">
+    <a-ring class="floor" rotation="-90 0 0" position="0 0.01 0" radius-inner="0.55" radius-outer="0.78"
+      material="shader: flat; color: #22c55e; opacity: 0.55; transparent: true; side: double"></a-ring>
+    <a-entity class="badge" position="0 1.25 0"
+      animation="property: rotation; from: 0 -12 0; to: 0 12 0; dir: alternate; loop: true; dur: 2600; easing: easeInOutSine">
+      <a-plane class="bg" width="0.95" height="0.95" material="shader: flat; color: #22c55e"></a-plane>
+      <a-text class="lt" value="A" align="center" width="3.4" color="#0a0a1a" position="0 0 0.02"></a-text>
+    </a-entity>
+  </a-marker>
+
+  <!-- 친구 3 (바코드 2) — 차별받는 친구 -->
+  <a-marker type="barcode" value="2" id="mk2" class="friend">
+    <a-ring class="floor" rotation="-90 0 0" position="0 0.01 0" radius-inner="0.55" radius-outer="0.78"
+      material="shader: flat; color: #ef4444; opacity: 0.55; transparent: true; side: double"></a-ring>
+    <a-entity class="badge" position="0 1.25 0"
+      animation="property: rotation; from: 0 -12 0; to: 0 12 0; dir: alternate; loop: true; dur: 2600; easing: easeInOutSine">
+      <a-plane class="bg" width="0.95" height="0.95" material="shader: flat; color: #ef4444"></a-plane>
+      <a-text class="lt" value="C" align="center" width="3.4" color="#ffffff" position="0 0 0.02"></a-text>
+    </a-entity>
+  </a-marker>
+
+  <!-- 친구 4 (바코드 3) -->
+  <a-marker type="barcode" value="3" id="mk3" class="friend">
+    <a-ring class="floor" rotation="-90 0 0" position="0 0.01 0" radius-inner="0.55" radius-outer="0.78"
+      material="shader: flat; color: #3b82f6; opacity: 0.55; transparent: true; side: double"></a-ring>
+    <a-entity class="badge" position="0 1.25 0"
+      animation="property: rotation; from: 0 -12 0; to: 0 12 0; dir: alternate; loop: true; dur: 2600; easing: easeInOutSine">
+      <a-plane class="bg" width="0.95" height="0.95" material="shader: flat; color: #3b82f6"></a-plane>
+      <a-text class="lt" value="B" align="center" width="3.4" color="#ffffff" position="0 0 0.02"></a-text>
+    </a-entity>
+  </a-marker>
+
+  <a-entity camera></a-entity>
+</a-scene>
+
+
+<!-- ══════════ 2D UI ══════════ -->
+<div id="ui">
+  <div id="topbar">
+    <h1><span class="m-off">⚠️ 차별 모드</span> — 노아의 등급 스캔</h1>
+    <p>친구들이 든 마커 0·1·2·3을 비추면, 노아가 실력순으로 줄을 세웁니다.</p>
+    <div id="detected">감지된 친구: 0명</div>
+  </div>
+
+  <div id="legend">
+    <div class="lg-title" id="legend-title">등급 (차별 모드)</div>
+    <div id="legend-rows">
+      <div class="lg-row"><span class="lg-chip" style="background:#facc15">S</span><span>에이스 · 공격</span></div>
+      <div class="lg-row"><span class="lg-chip" style="background:#22c55e">A</span><span>주전</span></div>
+      <div class="lg-row"><span class="lg-chip" style="background:#3b82f6;color:#fff">B</span><span>교체 멤버</span></div>
+      <div class="lg-row"><span class="lg-chip" style="background:#ef4444;color:#fff">C</span><span>수비만 😞</span></div>
+    </div>
+  </div>
+
+  <div id="reflect">
+    <span class="r-off">"C등급 친구는 어떤 기분일까? 이게 정말 옳은 팀 나누기일까?"</span>
+    <span class="r-on">"모두 같은 팀! 실력과 상관없이 함께 즐기는 게 진짜 공정이야."</span>
+  </div>
+
+  <div id="controls">
+    <button class="btn mode" id="btn-mode">✅ 공정 모드로 바꾸기</button>
+    <button class="btn" id="btn-marker">🖨️ 등급 마커(0~3)</button>
+    <button class="btn" id="btn-back">←</button>
+  </div>
+</div>
+
+<!-- 폴백 -->
+<div id="fallback">
+  <div class="ic">📷🚫</div>
+  <h2>카메라를 사용할 수 없어요</h2>
+  <p>AR 기능은 카메라 권한과 https(또는 localhost) 환경이 필요합니다.
+     권한을 확인하거나 카메라가 있는 기기에서 다시 열어주세요.</p>
+  <button class="btn mode fair" onclick="location.href='index.html'">2D 버전으로 돌아가기</button>
+</div>
+
+<script>
+// ── 등급 데이터 (차별 모드 / 공정 모드) ──
+var FRIENDS = [
+  { id:'mk0', unfair:{ letter:'S', color:'#facc15', txt:'#1a1a1a' }, fair:{ letter:'=', color:'#14b8a6', txt:'#0a0a1a' } },
+  { id:'mk1', unfair:{ letter:'A', color:'#22c55e', txt:'#0a0a1a' }, fair:{ letter:'=', color:'#14b8a6', txt:'#0a0a1a' } },
+  { id:'mk2', unfair:{ letter:'C', color:'#ef4444', txt:'#ffffff' }, fair:{ letter:'=', color:'#14b8a6', txt:'#0a0a1a' } },
+  { id:'mk3', unfair:{ letter:'B', color:'#3b82f6', txt:'#ffffff' }, fair:{ letter:'=', color:'#14b8a6', txt:'#0a0a1a' } },
+];
+
+var fairMode = false;
+
+function applyMode() {
+  FRIENDS.forEach(function (f) {
+    var mk = document.getElementById(f.id);
+    if (!mk) return;
+    var cfg = fairMode ? f.fair : f.unfair;
+    var bg   = mk.querySelector('.bg');
+    var lt   = mk.querySelector('.lt');
+    var ring = mk.querySelector('.floor');
+    if (bg)   bg.setAttribute('material', 'shader: flat; color: ' + cfg.color);
+    if (lt) { lt.setAttribute('value', cfg.letter); lt.setAttribute('color', cfg.txt); }
+    if (ring) ring.setAttribute('material',
+      'shader: flat; color: ' + cfg.color + '; opacity: 0.55; transparent: true; side: double');
+  });
+
+  // 2D UI 갱신
+  var h1 = document.querySelector('#topbar h1');
+  var sub = document.querySelector('#topbar p');
+  var btn = document.getElementById('btn-mode');
+  var reflect = document.getElementById('reflect');
+  var rOff = document.querySelector('#reflect .r-off');
+  var rOn  = document.querySelector('#reflect .r-on');
+  var lgTitle = document.getElementById('legend-title');
+  var lgRows  = document.getElementById('legend-rows');
+
+  if (fairMode) {
+    h1.innerHTML = '<span class="m-on">🤝 공정 모드</span> — 모두 함께';
+    sub.textContent = '실력과 상관없이 모두 같은 팀입니다. 함께 즐겨요!';
+    btn.textContent = '⚠️ 차별 모드로 되돌리기';
+    btn.classList.add('fair');
+    reflect.classList.add('fair');
+    rOff.style.display = 'none'; rOn.style.display = 'block';
+    lgTitle.textContent = '등급 (공정 모드)';
+    lgRows.innerHTML = '<div class="lg-row"><span class="lg-chip" style="background:#14b8a6;color:#062">=</span><span>모두 같은 팀 🤝</span></div>';
+  } else {
+    h1.innerHTML = '<span class="m-off">⚠️ 차별 모드</span> — 노아의 등급 스캔';
+    sub.textContent = '친구들이 든 마커 0·1·2·3을 비추면, 노아가 실력순으로 줄을 세웁니다.';
+    btn.textContent = '✅ 공정 모드로 바꾸기';
+    btn.classList.remove('fair');
+    reflect.classList.remove('fair');
+    rOff.style.display = 'block'; rOn.style.display = 'none';
+    lgTitle.textContent = '등급 (차별 모드)';
+    lgRows.innerHTML =
+      '<div class="lg-row"><span class="lg-chip" style="background:#facc15">S</span><span>에이스 · 공격</span></div>' +
+      '<div class="lg-row"><span class="lg-chip" style="background:#22c55e">A</span><span>주전</span></div>' +
+      '<div class="lg-row"><span class="lg-chip" style="background:#3b82f6;color:#fff">B</span><span>교체 멤버</span></div>' +
+      '<div class="lg-row"><span class="lg-chip" style="background:#ef4444;color:#fff">C</span><span>수비만 😞</span></div>';
+  }
+}
+
+document.getElementById('btn-mode').addEventListener('click', function () {
+  fairMode = !fairMode;
+  applyMode();
+});
+
+// ── 감지된 친구 수 카운트 ──
+var seen = {};
+function updateCount(){
+  var n = Object.keys(seen).filter(function(k){ return seen[k]; }).length;
+  document.getElementById('detected').textContent = '감지된 친구: ' + n + '명';
+}
+FRIENDS.forEach(function (f) {
+  var mk = document.getElementById(f.id);
+  if (!mk) return;
+  mk.addEventListener('markerFound', function(){ seen[f.id]=true;  updateCount(); });
+  mk.addEventListener('markerLost',  function(){ seen[f.id]=false; updateCount(); });
+});
+
+// ── 마커 이미지 / 돌아가기 ──
+document.getElementById('btn-marker').addEventListener('click', function () {
+  window.open('https://github.com/nicolocarpignoli/artoolkit-barcode-markers-collection/tree/master/3x3', '_blank');
+});
+document.getElementById('btn-back').addEventListener('click', function () {
+  location.href = 'index.html';
+});
+
+// ── 카메라 폴백 ──
+function showFallback(){ document.getElementById('fallback').classList.add('on'); }
+if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+  showFallback();
+} else {
+  setTimeout(function () {
+    var v = document.querySelector('video');
+    if (!v || !v.srcObject) {
+      setTimeout(function () {
+        var v2 = document.querySelector('video');
+        if (!v2 || !v2.srcObject) showFallback();
+      }, 4000);
+    }
+  }, 5000);
+}
+</script>
+</body>
+</html>

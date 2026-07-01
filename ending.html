@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>엔딩 크레딧 — AI 전학생 노아</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Jua',sans-serif;color:#fff;overflow:hidden;height:100vh;
+  background:radial-gradient(ellipse at 50% 40%,#141033 0%,#0a0a1a 70%,#050510 100%);
+}
+
+/* starfield */
+.stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+.stars span{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;
+  opacity:.5;animation:tw 3s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.15}50%{opacity:.8}}
+
+/* credits scroll */
+.stage{position:fixed;inset:0;overflow:hidden;z-index:1}
+.roll{
+  position:absolute;left:0;right:0;top:100%;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:0 24px;animation:roll 34s linear forwards;
+}
+@keyframes roll{
+  from{transform:translateY(0)}
+  to{transform:translateY(calc(-100% - 100vh))}
+}
+.roll .heart{font-size:3.4rem;margin-bottom:18px;animation:beat 1.6s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.roll h1{font-size:2.2rem;color:#a78bfa;margin-bottom:10px;text-shadow:0 0 24px rgba(124,109,240,.6)}
+.roll .sub{color:#9aa0ad;font-size:1rem;margin-bottom:60px;line-height:1.7}
+.block{margin-bottom:52px}
+.block .role{color:#667;font-size:.85rem;letter-spacing:.15em;margin-bottom:8px}
+.block .val{color:#e8eaf0;font-size:1.35rem;line-height:1.6}
+.quote{
+  max-width:520px;margin:36px 0 60px;color:#c4bbff;font-size:1.15rem;line-height:1.9;
+  border-top:1px solid #3a3f5b;border-bottom:1px solid #3a3f5b;padding:28px 0;
+}
+.standard{color:#5ef0a0;font-size:1.05rem;line-height:1.8;margin-bottom:70px}
+.thanks{font-size:1.8rem;color:#f07caa;margin-bottom:14px}
+
+/* fixed controls */
+.controls{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:5;
+  display:flex;gap:12px;
+}
+.btn{
+  font-family:'Jua',sans-serif;border-radius:26px;cursor:pointer;font-size:1rem;
+  padding:12px 30px;transition:transform .15s,box-shadow .15s;
+}
+.btn-primary{background:linear-gradient(135deg,#6d28d9,#4f46e5);border:none;color:#fff;
+  box-shadow:0 5px 20px rgba(99,102,241,.4)}
+.btn-primary:hover{transform:scale(1.05)}
+.btn-ghost{background:rgba(0,0,0,.4);border:2px solid #475569;color:#cbd5e1}
+.btn-ghost:hover{border-color:#7c6df0;color:#fff}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="stage">
+  <div class="roll" id="roll">
+    <div class="heart">🤝</div>
+    <h1>노아와 함께한 여정, 완결</h1>
+    <p class="sub">인공지능 로봇 '노아'와 함께한<br>공존·상생 프로젝트를 끝까지 마쳤습니다.</p>
+
+    <div class="quote" id="closing-quote">
+      "기술이 할 수 없는 것,<br>그것은 마음을 나누는 일입니다."
+    </div>
+
+    <div class="block">
+      <div class="role">주인공</div>
+      <div class="val" id="hero-name">채원</div>
+    </div>
+    <div class="block">
+      <div class="role">AI 전학생</div>
+      <div class="val">노아 (NOAH)</div>
+    </div>
+    <div class="block">
+      <div class="role">함께한 시간</div>
+      <div class="val">교실 · 운동장 · 도서관에서의 30일</div>
+    </div>
+    <div class="block">
+      <div class="role">우리가 배운 것</div>
+      <div class="val">
+        스스로 생각할 권리 · 기술의 합목적성<br>
+        모두를 위한 공공선 · 인간의 존엄성
+      </div>
+    </div>
+
+    <div class="standard">
+      성취기준 [6도02-03]<br>
+      인간과 인공지능 로봇 간의 다양한 관계를 파악하고,<br>
+      도덕에 기반을 둔 관계 형성의 필요성을 탐구한다.
+    </div>
+
+    <div class="thanks">함께해 주어 고마워요 🌱</div>
+    <p class="sub">AI 전학생 '노아'와 함께하는 공존·상생 프로젝트</p>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn btn-ghost" id="btn-replay">🔄 다시 보기</button>
+  <button class="btn btn-primary" id="btn-home">🏠 처음으로</button>
+</div>
+
+<script>
+// starfield
+(function(){
+  var s=document.getElementById('stars');
+  for(var i=0;i<90;i++){
+    var d=document.createElement('span');
+    d.style.left=Math.random()*100+'vw';
+    d.style.top=Math.random()*100+'vh';
+    d.style.animationDelay=(-Math.random()*3)+'s';
+    s.appendChild(d);
+  }
+})();
+
+// 저장된 이름으로 주인공 표기
+try{
+  var p=JSON.parse(localStorage.getItem('noah_profile')||'null');
+  if(p && p.name) document.getElementById('hero-name').textContent=p.name;
+}catch(e){}
+
+// controls
+document.getElementById('btn-home').addEventListener('click', function(){
+  window.location.href='index.html';
+});
+document.getElementById('btn-replay').addEventListener('click', function(){
+  var roll=document.getElementById('roll');
+  roll.style.animation='none';
+  void roll.offsetWidth;           // reflow
+  roll.style.animation='roll 34s linear forwards';
+});
+</script>
+</body>
+</html>

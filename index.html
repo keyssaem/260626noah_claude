@@ -1,769 +1,242 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI 전학생 노아 — 공존·상생 프로젝트</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 전학생 노아 — 공존·상생 프로젝트</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Jua',sans-serif;color:#fff;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 30%,#1a1440 0%,#0a0a1a 70%,#050510 100%);
+  height:100vh;
+}
+.screen{
+  position:fixed;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;
+}
+.screen.on{display:flex;animation:fade .5s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
 
-  <!-- A-Frame CDN -->
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <!-- html2canvas CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+/* floating deco */
+.deco{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.deco span{position:absolute;display:block;border-radius:6px;opacity:.22;
+  animation:floaty linear infinite}
+@keyframes floaty{
+  0%{transform:translateY(0) rotate(0)}
+  100%{transform:translateY(-140px) rotate(180deg)}
+}
 
-  <link rel="stylesheet" href="style.css?v=20" />
+/* ── INTRO ── */
+#intro{background:#000;padding:0}
+#intro video{width:100%;height:100%;object-fit:cover}
+.skip{
+  position:absolute;top:22px;right:22px;z-index:5;
+  background:rgba(0,0,0,.5);border:1px solid #556;border-radius:20px;
+  color:#fff;font-family:'Jua',sans-serif;font-size:.95rem;
+  padding:8px 20px;cursor:pointer;
+}
+.skip:hover{background:rgba(0,0,0,.8)}
+
+/* ── MENU ── */
+.badge{
+  background:rgba(124,109,240,.18);border:1px solid #7c6df0;border-radius:20px;
+  padding:6px 18px;font-size:.85rem;color:#c4bbff;margin-bottom:22px;
+}
+.title{text-align:center;line-height:1.25;margin-bottom:14px;z-index:1}
+.title span{display:block}
+.title .t1{font-size:1.6rem;color:#e8eaf0}
+.title .t2{font-size:3.1rem;color:#a78bfa;text-shadow:0 0 30px rgba(124,109,240,.6);margin:2px 0}
+.title .t3{font-size:1.6rem;color:#e8eaf0}
+.title .t4{font-size:2.1rem;color:#f07caa;margin-top:4px}
+.subtitle{color:#9aa0ad;font-size:1rem;margin-bottom:38px;z-index:1}
+.btn{
+  font-family:'Jua',sans-serif;border:none;border-radius:30px;cursor:pointer;
+  transition:transform .16s,box-shadow .16s;
+}
+.btn-primary{
+  background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;
+  font-size:1.25rem;padding:16px 54px;box-shadow:0 6px 24px rgba(99,102,241,.4);
+}
+.btn-primary:hover{transform:scale(1.05);box-shadow:0 8px 32px rgba(124,109,240,.7)}
+.btn-ghost{
+  background:transparent;border:2px solid #475569;color:#cbd5e1;
+  font-size:.95rem;padding:11px 28px;margin-top:14px;
+}
+.btn-ghost:hover{border-color:#7c6df0;color:#fff}
+.foot-note{position:absolute;bottom:26px;color:#556;font-size:.8rem;z-index:1}
+
+/* ── PROFILE ── */
+.card{
+  background:rgba(20,24,40,.92);border:2px solid #3a3f5b;border-radius:24px;
+  padding:38px 34px;width:min(440px,92vw);z-index:1;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.avatar{
+  width:88px;height:88px;margin:0 auto 16px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#7c6df0,#4f46e5);
+  display:flex;align-items:center;justify-content:center;font-size:2.6rem;
+  box-shadow:0 0 30px rgba(124,109,240,.5);animation:bob 2.6s ease-in-out infinite;
+}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.bubble{
+  background:rgba(124,109,240,.14);border-radius:14px;padding:14px 18px;
+  text-align:center;font-size:1.05rem;line-height:1.6;margin-bottom:24px;color:#e8eaf0;
+}
+.field{margin-bottom:22px}
+.field label{display:block;font-size:.9rem;color:#9aa0ad;margin-bottom:8px}
+.field input{
+  width:100%;background:#0f1120;border:2px solid #3a3f5b;border-radius:12px;
+  color:#fff;font-family:'Jua',sans-serif;font-size:1.1rem;padding:13px 16px;outline:none;
+}
+.field input:focus{border-color:#7c6df0}
+.gender{display:flex;gap:12px}
+.gender button{
+  flex:1;background:#0f1120;border:2px solid #3a3f5b;border-radius:12px;
+  color:#9aa0ad;font-family:'Jua',sans-serif;font-size:1.05rem;padding:13px;cursor:pointer;
+  transition:.15s;
+}
+.gender button.on{border-color:#7c6df0;background:rgba(124,109,240,.2);color:#fff}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.card .btn-primary{width:100%;font-size:1.15rem;padding:15px}
+.card-back{
+  background:none;border:none;color:#667;font-family:'Jua',sans-serif;
+  font-size:.9rem;cursor:pointer;margin-top:14px;display:block;width:100%;
+}
+.card-back:hover{color:#9aa0ad}
+</style>
 </head>
-
 <body>
 
-  <!-- ══════════════════════════════════════════
-       LAYER 0 · A-Frame 360° 배경 공간
-  ══════════════════════════════════════════ -->
-  <a-scene id="aframe-scene" embedded vr-mode-ui="enabled: false" renderer="antialias: true"
-    loading-screen="dotsColor: #7c6df0; backgroundColor: #0a0a1a">
-    <!-- 하늘 배경 -->
-    <a-sky id="scene-sky" color="#0a0a1a" radius="100"></a-sky>
-
-    <!-- 교실 분위기를 암시하는 기하학 오브젝트들 (Onboarding용 장식) -->
-    <a-entity id="deco-group">
-      <!-- 부유하는 육면체들 -->
-      <a-box position="-8 2 -15" rotation="20 40 0" width="1.2" height="1.2" depth="1.2" color="#7c6df0" opacity="0.25"
-        animation="property: rotation; to: 40 80 20; dur: 8000; loop: true; easing: easeInOutSine"></a-box>
-      <a-box position="9 3 -18" rotation="-15 60 10" width="0.8" height="0.8" depth="0.8" color="#f07caa" opacity="0.2"
-        animation="property: rotation; to: -35 100 30; dur: 10000; loop: true; easing: easeInOutSine"></a-box>
-      <a-sphere position="0 5 -20" radius="0.6" color="#7cc5f0" opacity="0.15"
-        animation="property: position; to: 0 6.5 -20; dur: 4000; loop: true; dir: alternate; easing: easeInOutSine"></a-sphere>
-      <!-- 바닥 그리드 느낌 평면 -->
-      <a-plane position="0 -3 -10" rotation="-90 0 0" width="50" height="50" color="#1a1a3a" opacity="0.9"></a-plane>
-    </a-entity>
-
-    <a-entity position="0 1.6 0">
-      <a-camera look-controls="enabled: false" wasd-controls="enabled: false"></a-camera>
-    </a-entity>
-  </a-scene>
-
-
-  <!-- ══════════════════════════════════════════
-       LAYER 1 · 2D UI 오버레이 전체 컨테이너
-  ══════════════════════════════════════════ -->
-  <div id="ui-root">
-
-    <!-- ─────────────────────────────────────
-         SCREEN: INTRO
-    ───────────────────────────────────────── -->
-    <div id="screen-intro" class="screen active">
-      <!-- 풀스크린 인트로 영상 -->
-      <video id="intro-video" playsinline preload="auto">
-        <source src="assets/movie/0627%20(1)%20noah%20intro%20ver1.mp4" type="video/mp4" />
-      </video>
-      <!-- 자동재생 차단 시 클릭 유도 오버레이 -->
-      <div id="intro-click-start" class="intro-click-overlay" style="display:none">
-        <div class="intro-play-hint">▶ 클릭하여 영상 시작</div>
-      </div>
-      <button class="btn-skip" id="btn-intro-skip">SKIP →</button>
-    </div>
-
-    <!-- 메뉴 BGM (숨김) -->
-    <audio id="menu-bgm-audio" preload="auto">
-      <source src="assets/sound/Lessons_In_Sunlight%20bg.mp3" type="audio/mpeg" />
-    </audio>
-
-
-    <!-- ─────────────────────────────────────
-         SCREEN: MAIN MENU
-    ───────────────────────────────────────── -->
-    <div id="screen-menu" class="screen">
-      <div class="menu-content">
-        <div class="logo-badge">6학년 도덕 몰입형 체험</div>
-        <h1 class="menu-title">
-          <span class="title-line1">AI 전학생</span>
-          <span class="title-line2 accent">'노아'</span>
-          <span class="title-line3">와 함께하는</span>
-          <span class="title-line4">공존·상생 프로젝트</span>
-        </h1>
-        <p class="menu-subtitle">인공지능 로봇과 올바른 관계 맺기 시뮬레이터</p>
-        <div class="menu-buttons">
-          <button class="btn-primary" id="btn-start">시작하기</button>
-<button class="btn-secondary" id="btn-guide">사용 가이드</button>
-          <button class="btn-secondary" id="btn-teacher-menu">📋 교사용 가이드</button>
-        </div>
-        <div class="achievement-badge">성취기준 [6도02-03] 기반</div>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         SCREEN: INPUT — 이름 입력 (1/2)
-    ───────────────────────────────────────── -->
-    <div id="screen-input1" class="screen">
-      <div class="modal-card">
-        <div class="modal-step-indicator">
-          <span class="step active">①</span>
-          <span class="step-line"></span>
-          <span class="step">②</span>
-        </div>
-        <div class="noa-avatar">
-          <div class="avatar-ring"></div>
-          <div class="avatar-face">🤖</div>
-        </div>
-        <div class="noa-bubble">
-          <p id="i1-bubble">안녕! <br />먼저 네 이름을 알려줄 수 있어?</p>
-        </div>
-        <div class="input-group">
-          <label for="input-name" id="i1-name-lbl">나의 이름</label>
-          <input type="text" id="input-name" placeholder="이름을 입력하세요" maxlength="10" autocomplete="off" />
-          <span class="input-hint" id="i1-hint">최대 10자</span>
-        </div>
-        <div class="input-group">
-          <label id="i1-gender-lbl">나의 성별</label>
-          <div class="gender-btn-group">
-            <button type="button" class="btn-gender active" id="btn-gender-m" data-gender="남">남성 ♂</button>
-            <button type="button" class="btn-gender" id="btn-gender-f" data-gender="여">여성 ♀</button>
-          </div>
-        </div>
-        <button class="btn-primary" id="btn-input1-next" disabled>다음으로 →</button>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         SCREEN: INPUT — 친구 정의 (2/2)
-    ───────────────────────────────────────── -->
-    <div id="screen-input2" class="screen">
-      <div class="modal-card wide">
-        <div class="modal-step-indicator">
-          <span class="step done">✓</span>
-          <span class="step-line filled"></span>
-          <span class="step active">②</span>
-        </div>
-        <div class="noa-avatar">
-          <div class="avatar-ring"></div>
-          <div class="avatar-face">🤖</div>
-        </div>
-        <div class="noa-bubble">
-          <p id="input2-greeting">잘 부탁해! 그런데 하나만 더 물어볼게.</p>
-        </div>
-        <div class="friend-def-container">
-          <p class="friend-def-prompt" id="i2-prompt1">
-            나에게 <strong>친구</strong>란
-          </p>
-          <div class="friend-def-row">
-            <span class="bracket">"</span>
-            <input type="text" id="input-friend-def" placeholder="어떤 존재" maxlength="20" autocomplete="off"
-              class="inline-input" />
-            <span class="bracket">"</span>
-          </div>
-          <p class="friend-def-prompt mt-sm" id="i2-prompt2">
-            이다. 왜냐하면
-          </p>
-          <div class="friend-def-row">
-            <span class="bracket">"</span>
-            <input type="text" id="input-friend-reason" placeholder="그 이유" maxlength="30" autocomplete="off"
-              class="inline-input wide-input" />
-            <span class="bracket">"</span>
-            <span class="suffix" id="i2-suffix"> 때문이다.</span>
-          </div>
-          <p class="spoiler-hint" id="i2-spoiler">※ 이 대답은 나중에 중요한 순간에 다시 등장합니다.</p>
-        </div>
-        <div class="input2-buttons">
-          <button class="btn-secondary small" id="btn-input2-back">← 이전</button>
-          <button class="btn-primary" id="btn-input2-start" disabled>모험 시작! →</button>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         SCREEN: 사용 가이드 팝업
-    ───────────────────────────────────────── -->
-    <div id="screen-guide" class="screen">
-      <div class="modal-card guide-card">
-        <h2 class="guide-title">📖 사용 가이드</h2>
-        <ul class="guide-list">
-          <li>
-            <span class="guide-icon">🎮</span>
-            <div>
-              <strong>선택지를 고르세요</strong>
-              <p>각 상황마다 2가지 선택지가 제시됩니다.</p>
-            </div>
-          </li>
-          <li>
-            <span class="guide-icon">⚡</span>
-            <div>
-              <strong>효율성 vs 도덕성</strong>
-              <p>어떤 선택이 진정한 의미의 '올바른 관계'인지 생각해 보세요.</p>
-            </div>
-          </li>
-          <li>
-            <span class="guide-icon">🔁</span>
-            <div>
-              <strong>반전이 찾아옵니다</strong>
-              <p>게임이 진행되면서 예상치 못한 일이 일어날 수 있어요!</p>
-            </div>
-          </li>
-          <li>
-            <span class="guide-icon">📜</span>
-            <div>
-              <strong>윤리 헌장 발급</strong>
-              <p>모험을 완료하면 나만의 AI 윤리 헌장 이미지를 받을 수 있어요.</p>
-            </div>
-          </li>
-        </ul>
-        <button class="btn-primary" id="btn-guide-close">확인했어요!</button>
-      </div>
-    </div>
-
-    <!-- ─────────────────────────────────────
-         SCREEN: GAME
-    ───────────────────────────────────────── -->
-    <div id="screen-game" class="screen">
-
-      <!-- 배경 이미지 — 전체 화면 커버 (대화창 뒤까지) -->
-      <div id="game-bg-illustration"></div>
-
-      <!-- Chapter 2 red filter (절대 좌표 배경 레이어) -->
-      <div id="ch2-filter"></div>
-
-      <!-- HUD -->
-      <div id="game-hud">
-        <div id="hud-ch" class="hud-badge ch1">CHAPTER 1</div>
-        <div id="hud-day-badge" class="hud-day-badge">DAY ?</div>
-        <!-- 뱃지 & 히스토리 버튼 (친밀도/효율성 게이지 대체) -->
-        <div id="hud-center-btns">
-          <button id="hud-badge-btn" class="hud-icon-btn" title="챕터 뱃지 컬렉션">
-            <span class="hib-icon">🏅</span><span class="hib-label">뱃지</span>
-          </button>
-          <button id="hud-history-btn" class="hud-icon-btn" title="히스토리">
-            <span class="hib-icon">📜</span><span class="hib-label">HISTORY</span>
-          </button>
-        </div>
-        <div id="hud-right-col">
-          <div id="hud-day-num">Day 1</div>
-          <button id="hud-relation" class="hud-relation" title="현재 노아와 나의 관계 — 눌러서 자세히 보기">🔗 첫 만남</button>
-        </div>
-      </div>
-
-      <!-- Visual Novel Stage (character only — background is full-screen sibling above) -->
-      <div id="game-visual-panel">
-        <div id="game-character-sprite-container">
-          <div id="game-character-sprite-wrap">
-            <div id="noah-exclaim" aria-label="대화 계속">!</div>
-            <div id="game-character-sprite"></div>
-          </div>
-        </div>
-        <div id="game-scan-overlay" class="hidden">
-          <div class="scan-line"></div>
-          <div class="scan-grid"></div>
-        </div>
-      </div>
-
-      <!-- 스테이지 타이틀 플래시 -->
-      <div id="stage-title-flash">
-        <span id="stage-title-inner"></span>
-      </div>
-
-      <!-- 항상 표시 관계 사이드바 -->
-      <div id="relation-sidebar">
-        <div class="rsb-header">🔗 관계 현황</div>
-        <div class="rsb-type-row">
-          <span id="rsb-emoji">🤖</span>
-          <span id="rsb-name">--</span>
-        </div>
-        <p id="rsb-desc" class="rsb-desc"></p>
-        <div class="rsb-bars">
-          <div class="rsb-bar-row">
-            <span class="rsb-lbl">❤️ 친밀도</span>
-            <div class="rsb-track"><div id="rsb-fill-aff" class="rsb-fill rsb-aff"></div></div>
-            <span id="rsb-val-aff" class="rsb-val">0%</span>
-          </div>
-          <div class="rsb-bar-row">
-            <span class="rsb-lbl">⚡ 효율성</span>
-            <div class="rsb-track"><div id="rsb-fill-eff" class="rsb-fill rsb-eff"></div></div>
-            <span id="rsb-val-eff" class="rsb-val">0%</span>
-          </div>
-          <!-- 도덕성: 챕터 2 전까지 hidden -->
-          <div id="rsb-moral-row" class="rsb-bar-row rsb-moral-hidden">
-            <span class="rsb-lbl">💚 도덕성</span>
-            <div class="rsb-track"><div id="rsb-fill-moral" class="rsb-fill rsb-moral"></div></div>
-            <span id="rsb-val-moral" class="rsb-val">0%</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 대화창 + 선택지 (하단 고정) -->
-      <div id="game-dlg-wrap">
-        <!-- 캐릭터 초상화 (선생님/채원/동혁 발화 시 표시) -->
-        <div id="dlg-portrait-wrap"><img id="dlg-portrait-img" alt="" /></div>
-        <div id="game-dlg-box">
-          <span id="dlg-speaker-tag"></span>
-          <div id="dlg-text-area"></div>
-          <span id="dlg-click-prompt" class="dlg-click-prompt">▼</span>
-        </div>
-        <button id="btn-dlg-adv" class="btn-dlg-adv" disabled>다음 ▶</button>
-        <!-- 선택지 — dlg-wrap 안에서 대화창 대신 표시 -->
-        <div id="game-choice-wrap" style="display:none">
-          <p class="choice-prompt-text">어떻게 할까요?</p>
-          <div id="choice-btn-list"></div>
-        </div>
-      </div>
-
-      <!-- ── 뱃지 컬렉션 패널 ── -->
-      <div id="badge-panel" class="side-panel hidden">
-        <div class="side-panel-header">
-          <span>🏅 챕터 뱃지</span>
-          <button id="badge-panel-close" class="panel-close-btn">✕</button>
-        </div>
-        <div id="badge-grid">
-          <div class="badge-item locked" id="badge-item-1">
-            <div class="badge-img-wrap">
-              <img src="assets/image/badge_ch1.png" alt="CH1 뱃지" class="badge-img" />
-              <div class="badge-lock-overlay">🔒</div>
-            </div>
-            <div class="badge-ch-tag">CHAPTER 1</div>
-            <div class="badge-name">공존의 시작</div>
-          </div>
-          <div class="badge-item locked" id="badge-item-2">
-            <div class="badge-img-wrap">
-              <img src="assets/image/badge_ch2.png" alt="CH2 뱃지" class="badge-img" />
-              <div class="badge-lock-overlay">🔒</div>
-            </div>
-            <div class="badge-ch-tag">CHAPTER 2</div>
-            <div class="badge-name">균열의 기억</div>
-          </div>
-          <div class="badge-item locked" id="badge-item-3">
-            <div class="badge-img-wrap">
-              <img src="assets/image/badge_ch3.png" alt="CH3 뱃지" class="badge-img" />
-              <div class="badge-lock-overlay">🔒</div>
-            </div>
-            <div class="badge-ch-tag">CHAPTER 3</div>
-            <div class="badge-name">회복의 여정</div>
-          </div>
-          <div class="badge-item locked" id="badge-item-4">
-            <div class="badge-img-wrap">
-              <img src="assets/image/badge_ch4.png" alt="CH4 뱃지" class="badge-img" />
-              <div class="badge-lock-overlay">🔒</div>
-            </div>
-            <div class="badge-ch-tag">CHAPTER 4</div>
-            <div class="badge-name">상생의 완성</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── 히스토리 패널 ── -->
-      <div id="history-panel" class="side-panel hidden">
-        <div class="side-panel-header">
-          <span>📜 진행 과정</span>
-          <button id="history-panel-close" class="panel-close-btn">✕</button>
-        </div>
-        <div id="history-list">
-          <p class="history-empty">아직 기록이 없습니다.</p>
-        </div>
-      </div>
-
-    </div><!-- /#screen-game -->
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: Stage 7 가짜 인증서
-    ───────────────────────────────────────── -->
-    <div id="ov-cert" class="game-overlay hidden">
-      <div class="cert-card">
-        <div class="cert-trophy">🏆</div>
-        <p class="cert-sub">축하합니다!</p>
-        <h2 class="cert-title">노아의 공식 단짝 친구</h2>
-        <p class="cert-name" id="cert-name-disp"></p>
-        <div class="cert-stars">★ ★ ★ ★ ★</div>
-        <p class="cert-note">효율성 100% 달성 · 완벽한 AI 관계 마스터 인증</p>
-        <div id="cert-loader-wrap" class="hidden">
-          <p id="cert-loader-lbl" class="cert-loader-lbl">저장 중... 0%</p>
-          <div class="cert-loader-track">
-            <div id="cert-loader-bar" class="cert-loader-bar"></div>
-          </div>
-        </div>
-        <button class="btn-primary" id="btn-cert-save">
-          💾 인증서 저장하고 최종 확인 코드 발급받기
-        </button>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: 글리치 화면 (반전 발동)
-    ───────────────────────────────────────── -->
-    <div id="ov-glitch" class="game-overlay hidden">
-      <div id="glitch-scanlines"></div>
-      <div id="glitch-flood"></div>
-      <div id="glitch-center">
-        <div class="glitch-fatal" data-text="[FATAL ERROR]">[FATAL ERROR]</div>
-        <p class="glitch-sub-msg">시스템 복구 불가 · 데이터 손상 감지됨</p>
-        <p class="glitch-sub-msg" style="font-size:12px; opacity:.5;">화면 어딘가에 탈출 방법이 숨겨져 있습니다...</p>
-      </div>
-      <!-- 이스터에그: 동기화 칩 -->
-      <button id="sync-chip-btn" class="hidden">
-        <span class="chip-icon">🔌</span>
-        <span class="chip-label">동기화 칩</span>
-      </button>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: Game Over
-    ───────────────────────────────────────── -->
-    <div id="ov-gameover" class="game-overlay hidden">
-      <div class="gameover-card">
-        <div class="gameover-symbol">⚠️</div>
-        <h2 class="gameover-title" id="go-title">잠깐, 다시 생각해볼까요?</h2>
-        <p class="gameover-desc" id="go-desc"></p>
-        <div class="gameover-lesson-box">
-          <span class="gameover-lesson-tag">💡 생각해보기</span>
-          <p class="gameover-lesson" id="go-lesson"></p>
-        </div>
-        <button class="btn-primary" id="btn-go-retry">다시 선택할게요 →</button>
-      </div>
-    </div>
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: 미니게임 컨테이너 (Stage 1-5)
-    ───────────────────────────────────────── -->
-    <div id="ov-minigame" class="game-overlay hidden">
-      <div id="mg-box"></div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: Stage 15 — 스티커 선택 (윤리 헌장 약속)
-    ───────────────────────────────────────── -->
-    <div id="ov-sticker" class="game-overlay hidden">
-      <div class="sticker-card">
-        <h3 class="sticker-card-title">📜 윤리 헌장 약속 선택</h3>
-        <p class="sticker-card-sub">노아와의 관계를 복구할 <strong>가장 중요한 약속 3가지</strong>를 고르세요.</p>
-        <p class="sticker-count-label">선택: <span id="sticker-count">0</span> / 3</p>
-        <div id="sticker-options"></div>
-        <button id="btn-sticker-done" class="btn-primary" disabled>서명란으로 이동하기 →</button>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: Stage 16 — 최종 서명
-    ───────────────────────────────────────── -->
-    <div id="ov-signature" class="game-overlay hidden">
-      <div class="signature-card">
-        <div class="noa-avatar small">
-          <div class="avatar-ring"></div>
-          <div class="avatar-face">🤖</div>
-        </div>
-        <h3 class="sig-title">약속에 서명하기</h3>
-        <blockquote class="sig-question">"인공지능 로봇이 사람과 친구가 될 수 있을까?"</blockquote>
-        <p class="sig-desc">나는 위의 약속들을 지키며 AI와 올바른 관계를 맺겠습니다.</p>
-        <div class="input-group sig-input-group">
-          <label for="input-signature">나의 서명</label>
-          <input type="text" id="input-signature" placeholder="이름을 입력하세요" maxlength="10" autocomplete="off" />
-        </div>
-        <button id="btn-signature-done" class="btn-primary" disabled>윤리 헌장 발급받기 →</button>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: Stage 17 — 시네마틱 텍스트
-    ───────────────────────────────────────── -->
-    <div id="ov-cinematic" class="game-overlay hidden">
-      <div id="cinematic-inner">
-        <div id="cinematic-text-area"></div>
-        <p class="cinematic-hint">— 클릭하여 계속 —</p>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: 최종 30일 기록 보고서 및 엔딩 분기
-    ───────────────────────────────────────── -->
-    <div id="ov-ending-report" class="game-overlay hidden">
-      <div class="ending-card">
-        <div class="ending-ribbon">🏆 30일의 모험 완료</div>
-        <h2 class="ending-title">노아와 함께한 30일의 기록</h2>
-
-        <div class="ending-result-box">
-          <p class="ending-eval-label">최종 관계 등급</p>
-          <div class="ending-tier-title" id="end-tier-name">영혼의 동반자</div>
-          <p class="ending-tier-desc" id="end-tier-desc">노아와 완벽한 정서적, 도덕적 교감을 나눴습니다.</p>
-        </div>
-
-        <div class="ending-stats-grid">
-          <div class="ending-stat-card">
-            <span class="stat-emoji">❤️</span>
-            <span class="stat-label">최종 친밀도</span>
-            <span class="stat-value" id="end-stat-affinity">95%</span>
-          </div>
-          <div class="ending-stat-card">
-            <span class="stat-emoji">💚</span>
-            <span class="stat-label">최종 도덕성</span>
-            <span class="stat-value" id="end-stat-moral">100%</span>
-          </div>
-          <div class="ending-stat-card">
-            <span class="stat-emoji">⚡</span>
-            <span class="stat-label">최종 효율성</span>
-            <span class="stat-value" id="end-stat-efficiency">15%</span>
-          </div>
-        </div>
-
-        <div class="ending-buttons">
-          <button class="btn-primary" id="btn-report-download">💾 30일의 기록 보고서 다운로드</button>
-          <button class="btn-primary" id="btn-record-download">📝 나의 성찰 기록지 다운로드</button>
-          <button class="btn-secondary" id="btn-replay">🔄 다시 플레이하기 (리플레이)</button>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         설정 버튼 (항상 표시)
-    ───────────────────────────────────────── -->
-    <button id="btn-settings-gear" class="settings-gear" title="설정" aria-label="설정 열기">⚙</button>
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: 설정 패널
-    ───────────────────────────────────────── -->
-    <div id="ov-settings" class="game-overlay hidden">
-      <div class="settings-card">
-        <button id="btn-settings-close" class="settings-close" aria-label="설정 닫기">✕</button>
-        <h2 class="settings-title">⚙ 설정</h2>
-
-        <div class="settings-group">
-          <span class="settings-label" id="lbl-sfx">🔊 효과음</span>
-          <button class="toggle-switch on" id="tg-sfx" role="switch" aria-checked="true"><span class="toggle-knob"></span></button>
-        </div>
-
-        <div class="settings-group">
-          <span class="settings-label" id="lbl-bgm">🎵 배경 음악</span>
-          <button class="toggle-switch on" id="tg-bgm" role="switch" aria-checked="true"><span class="toggle-knob"></span></button>
-        </div>
-
-        <div class="settings-group">
-          <span class="settings-label" id="lbl-tts">🗣️ 대사 읽어주기</span>
-          <button class="toggle-switch" id="tg-tts" role="switch" aria-checked="false"><span class="toggle-knob"></span></button>
-        </div>
-
-        <div class="settings-group column">
-          <span class="settings-label" id="lbl-font">🔤 글자 크기</span>
-          <div class="seg-control" id="seg-fontsize">
-            <button data-fs="sm">작게</button>
-            <button data-fs="md" class="active">보통</button>
-            <button data-fs="lg">크게</button>
-          </div>
-        </div>
-
-        <div class="settings-group">
-          <span class="settings-label" id="lbl-contrast">👁️ 고대비(색약) 모드</span>
-          <button class="toggle-switch" id="tg-contrast" role="switch" aria-checked="false"><span class="toggle-knob"></span></button>
-        </div>
-
-        <div class="settings-group column">
-          <span class="settings-label">🌐 언어 / Language</span>
-          <div class="seg-control seg-lang" id="seg-lang">
-            <button data-lang="ko" class="active">한국어</button>
-            <button data-lang="en">English</button>
-            <button data-lang="zh">中文</button>
-            <button data-lang="ru">Рус.</button>
-          </div>
-        </div>
-
-        <div class="settings-divider"></div>
-
-        <button class="btn-secondary settings-action" id="btn-open-teacher">📋 교사용 가이드 보기</button>
-        <button class="btn-secondary settings-action settings-danger" id="btn-reset-progress">🗑️ 진행 기록 초기화</button>
-
-        <p class="settings-foot">성취기준 [6도02-03] · 공존·상생 프로젝트 v2.0</p>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: 교사용 가이드
-    ───────────────────────────────────────── -->
-    <div id="ov-teacher" class="game-overlay hidden">
-      <div class="teacher-card">
-        <button id="btn-teacher-close" class="settings-close" aria-label="가이드 닫기">✕</button>
-        <h2 class="teacher-title">📋 교사용 수업 가이드</h2>
-        <p class="teacher-sub" id="teacher-context">현재 진행 상황에 맞는 발문과 핵심 개념을 안내합니다.</p>
-        <div id="teacher-body" class="teacher-body"></div>
-        <div class="teacher-nav">
-          <button class="btn-secondary small" id="btn-teacher-prev">← 이전 단계</button>
-          <span id="teacher-stage-label" class="teacher-stage-label">전체 흐름</span>
-          <button class="btn-secondary small" id="btn-teacher-next">다음 단계 →</button>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ─────────────────────────────────────
-         OVERLAY: 관계 진단 (HUD 관계칩 클릭 시)
-    ───────────────────────────────────────── -->
-    <div id="ov-relation" class="game-overlay hidden">
-      <div class="relation-card">
-        <button id="btn-relation-close" class="settings-close" aria-label="닫기">✕</button>
-        <h3 class="relation-title">🔗 지금, 나와 노아의 관계는?</h3>
-        <div class="relation-axis">
-          <div class="relation-axis-row">
-            <span class="relation-axis-lbl">❤️ 친밀도</span>
-            <div class="relation-axis-track"><div id="relation-bar-aff" class="relation-axis-fill"></div></div>
-            <span id="relation-val-aff" class="relation-axis-val">50%</span>
-          </div>
-          <div class="relation-axis-row">
-            <span class="relation-axis-lbl">💚 존중·도덕</span>
-            <div class="relation-axis-track"><div id="relation-bar-res" class="relation-axis-fill green"></div></div>
-            <span id="relation-val-res" class="relation-axis-val">50%</span>
-          </div>
-        </div>
-        <div class="relation-type-box">
-          <span class="relation-type-emoji" id="relation-type-emoji">🤝</span>
-          <div>
-            <p class="relation-type-name" id="relation-type-name">동료</p>
-            <p class="relation-type-desc" id="relation-type-desc">노아와 서로 돕는 동료 관계입니다.</p>
-          </div>
-        </div>
-        <p class="relation-hint">💡 친밀도만 높은 관계는 자칫 노아를 '편한 도구'로 대하게 될 수 있어요. 친밀함과 도덕적 존중이 함께 자랄 때 진짜 공존입니다.</p>
-        <button class="btn-primary" id="btn-relation-ok">계속하기 →</button>
-      </div>
-    </div>
-
-
-  </div><!-- /#ui-root -->
-
-
-  <!-- ─────────────────────────────────────
-       CERT TEMPLATE (off-screen, html2canvas 캡처용)
-  ───────────────────────────────────────── -->
-  <div id="cert-template">
-    <div class="ct-inner">
-      <div class="ct-header">
-        <div class="ct-logo">🤝</div>
-        <h1 class="ct-main-title">AI 공존·상생 윤리 헌장</h1>
-        <p class="ct-subtitle">Achievement Standard [6도02-03]</p>
-      </div>
-      <div class="ct-body">
-        <p class="ct-name-label">헌장 보유자</p>
-        <p class="ct-name" id="ct-name"></p>
-        <div class="ct-divider"></div>
-        <p class="ct-pledges-label">나의 세 가지 약속</p>
-        <ol class="ct-pledges" id="ct-pledges"></ol>
-        <div class="ct-divider"></div>
-        <p class="ct-sig-label">서명</p>
-        <p class="ct-sig" id="ct-sig"></p>
-        <p class="ct-date" id="ct-date"></p>
-      </div>
-      <div class="ct-footer">
-        <p>AI 전학생 '노아'와 함께하는 공존·상생 프로젝트</p>
-      </div>
-    </div>
+<div class="deco" id="deco"></div>
+
+<!-- ══ INTRO ══ -->
+<section id="intro" class="screen on">
+  <video id="intro-video" playsinline preload="auto" muted>
+    <source src="assets/movie/0627%20(1)%20noah%20intro%20ver1.mp4" type="video/mp4">
+  </video>
+  <button class="skip" id="skip-intro">SKIP →</button>
+</section>
+
+<!-- ══ MENU ══ -->
+<section id="menu" class="screen">
+  <div class="badge">6학년 도덕 몰입형 체험 · [6도02-03]</div>
+  <div class="title">
+    <span class="t1">AI 전학생</span>
+    <span class="t2">'노아'</span>
+    <span class="t3">와 함께하는</span>
+    <span class="t4">공존·상생 프로젝트</span>
   </div>
+  <p class="subtitle">인공지능 로봇과 올바른 관계 맺기 시뮬레이터</p>
+  <button class="btn btn-primary" id="go-profile">▶ 모험 시작하기</button>
+  <button class="btn btn-ghost" id="replay-intro">⟲ 인트로 다시 보기</button>
+  <div class="foot-note">인간과 인공지능 로봇 간의 도덕에 기반한 관계 형성</div>
+</section>
 
-
-  <!-- ─────────────────────────────────────
-       REPORT TEMPLATE (off-screen, html2canvas 캡처용)
-  ───────────────────────────────────────── -->
-  <div id="report-template">
-    <div class="rt-inner">
-      <div class="rt-header">
-        <div class="rt-logo">🤖📊</div>
-        <h1 class="rt-main-title">노아와 함께한 30일의 기록 보고서</h1>
-        <p class="rt-subtitle">REPORT: AI RELATIONSHIP EVALUATION</p>
-      </div>
-      <div class="rt-body">
-        <div class="rt-meta-table">
-          <div class="rt-meta-row">
-            <span class="rt-meta-lbl">대상 학생:</span>
-            <span class="rt-meta-val" id="rt-student-name">김도덕</span>
-            <span class="rt-meta-lbl">성별:</span>
-            <span class="rt-meta-val" id="rt-student-gender">남</span>
-          </div>
-          <div class="rt-meta-row">
-            <span class="rt-meta-lbl">평가 일자:</span>
-            <span class="rt-meta-val" id="rt-date">2040년 6월 30일</span>
-            <span class="rt-meta-lbl">최종 친밀도:</span>
-            <span class="rt-meta-val rt-highlight" id="rt-affinity">95%</span>
-          </div>
-        </div>
-        <div class="rt-verdict-box">
-          <div class="rt-verdict-lbl">관계 평가 결과</div>
-          <div class="rt-tier-title" id="rt-tier-name">영혼의 동반자 (Tier 1)</div>
-          <p class="rt-tier-desc" id="rt-tier-desc">인간과 인공지능의 공존 가치를 깊이 이해하고 노아를 도구화하지 않으며 따뜻한 정서적 교감을 이끌어냈습니다.</p>
-        </div>
-        <div class="rt-stats-section">
-          <h3 class="rt-section-title">📊 핵심 스탯 요약</h3>
-          <div class="rt-stats-row">
-            <div class="rt-stat-item">
-              <div class="rt-stat-val text-success" id="rt-stat-moral">100점</div>
-              <div class="rt-stat-lbl">도덕성 수치</div>
-            </div>
-            <div class="rt-stat-item">
-              <div class="rt-stat-val text-primary" id="rt-stat-eff">15점</div>
-              <div class="rt-stat-lbl">효율성 수치</div>
-            </div>
-          </div>
-        </div>
-        <div class="rt-footer-note">
-          <p>본 보고서는 로봇 '노아'와 30일간 진행한 공존·상생 시뮬레이션의 최종 기록입니다.</p>
-        </div>
+<!-- ══ PROFILE (이름/성별) ══ -->
+<section id="profile" class="screen">
+  <div class="card">
+    <div class="avatar">🤖</div>
+    <div class="bubble">안녕! 만나서 반가워.<br>먼저 네 <b>이름</b>과 <b>성별</b>을 알려줄래?</div>
+    <div class="field">
+      <label for="name">나의 이름</label>
+      <input type="text" id="name" maxlength="10" placeholder="이름을 입력하세요 (최대 10자)" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>나의 성별</label>
+      <div class="gender">
+        <button type="button" class="on" data-g="남">남성 ♂</button>
+        <button type="button" data-g="여">여성 ♀</button>
       </div>
     </div>
+    <button class="btn btn-primary" id="start-adventure" disabled>🗺️ 월드맵으로 출발! →</button>
+    <button class="card-back" id="back-menu">← 뒤로</button>
   </div>
+</section>
 
+<script>
+// ── 화면 전환 ──
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
 
-  <!-- ─────────────────────────────────────
-       RECORD SHEET TEMPLATE (off-screen, html2canvas 캡처용)
-       학생의 모든 생각·응답을 한 장으로 모은 성찰 기록지
-  ───────────────────────────────────────── -->
-  <div id="record-template">
-    <div class="rec-inner">
-      <div class="rec-header">
-        <div class="rec-logo">🌱</div>
-        <h1 class="rec-main-title">나의 공존·상생 성찰 기록지</h1>
-        <p class="rec-subtitle">AI 전학생 '노아'와 함께한 30일의 생각 모음</p>
-      </div>
-      <div class="rec-body">
-        <div class="rec-meta">
-          <span><b>이름</b> <span id="rec-name">―</span></span>
-          <span><b>최종 관계</b> <span id="rec-tier">―</span></span>
-        </div>
+// ── 배경 데코 생성 ──
+(function(){
+  var wrap=document.getElementById('deco'), colors=['#7c6df0','#f07caa','#7cc5f0','#5ef0a0'];
+  for(var i=0;i<18;i++){
+    var s=document.createElement('span');
+    var size=8+Math.random()*22;
+    s.style.width=s.style.height=size+'px';
+    s.style.left=Math.random()*100+'vw';
+    s.style.top=Math.random()*100+'vh';
+    s.style.background=colors[i%colors.length];
+    s.style.animationDuration=(6+Math.random()*8)+'s';
+    s.style.animationDelay=(-Math.random()*8)+'s';
+    wrap.appendChild(s);
+  }
+})();
 
-        <div class="rec-block">
-          <p class="rec-q">Q1. 나에게 '친구'란?</p>
-          <p class="rec-a" id="rec-friend">―</p>
-        </div>
+// ── 인트로 영상 ──
+var video=document.getElementById('intro-video');
+video.play().catch(function(){}); // 자동재생 실패해도 SKIP으로 진행 가능
+video.addEventListener('ended', function(){ show('menu'); });
+document.getElementById('skip-intro').addEventListener('click', function(){
+  try{ video.pause(); }catch(e){}
+  show('menu');
+});
 
-        <div class="rec-block">
-          <p class="rec-q">Q2. 인간만이 할 수 있는 '고유한 가치'는 무엇일까?</p>
-          <p class="rec-a" id="rec-discussion">―</p>
-        </div>
+// ── 메뉴 ──
+document.getElementById('go-profile').addEventListener('click', function(){
+  show('profile');
+  document.getElementById('name').focus();
+});
+document.getElementById('replay-intro').addEventListener('click', function(){
+  show('intro');
+  try{ video.currentTime=0; video.play(); }catch(e){}
+});
 
-        <div class="rec-block">
-          <p class="rec-q">Q3. 오늘 학교에서 가장 따뜻했던 한 순간 (나의 창작 글)</p>
-          <p class="rec-a" id="rec-writing">―</p>
-        </div>
+// ── 프로필 입력 ──
+var nameInput=document.getElementById('name');
+var startBtn=document.getElementById('start-adventure');
+var gender='남';
 
-        <div class="rec-block">
-          <p class="rec-q">Q4. 노아와 올바른 관계를 위한 나의 세 가지 약속</p>
-          <ol class="rec-pledges" id="rec-pledges"></ol>
-        </div>
+nameInput.addEventListener('input', function(){
+  startBtn.disabled = nameInput.value.trim().length===0;
+});
+nameInput.addEventListener('keydown', function(e){
+  if(e.key==='Enter' && !startBtn.disabled) startBtn.click();
+});
+document.querySelectorAll('.gender button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.gender button').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    gender=b.dataset.g;
+  });
+});
+document.getElementById('back-menu').addEventListener('click', function(){ show('menu'); });
 
-        <div class="rec-sign-row">
-          <span class="rec-sign-lbl">서명</span>
-          <span class="rec-sign" id="rec-sign">―</span>
-          <span class="rec-date" id="rec-date"></span>
-        </div>
-      </div>
-      <div class="rec-footer">
-        <p>성취기준 [6도02-03] 인간과 인공지능 로봇 간의 도덕에 기반한 관계 형성</p>
-      </div>
-    </div>
-  </div>
+// ── 출발 → localStorage 저장 후 월드맵으로 ──
+startBtn.addEventListener('click', function(){
+  var profile={ name:nameInput.value.trim(), gender:gender };
+  try{ localStorage.setItem('noah_profile', JSON.stringify(profile)); }catch(e){}
+  window.location.href='worldmap.html';
+});
 
-
-  <script src="config.js"></script>
-  <script src="script.js?v=26"></script>
+// 저장된 프로필이 있으면 프리필
+try{
+  var saved=JSON.parse(localStorage.getItem('noah_profile')||'null');
+  if(saved){
+    if(saved.name){ nameInput.value=saved.name; startBtn.disabled=false; }
+    if(saved.gender){
+      gender=saved.gender;
+      document.querySelectorAll('.gender button').forEach(function(b){
+        b.classList.toggle('on', b.dataset.g===saved.gender);
+      });
+    }
+  }
+}catch(e){}
+</script>
 </body>
-
 </html>

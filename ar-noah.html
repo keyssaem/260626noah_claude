@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AR 노아 소환 — Day 1 첫 만남</title>
+
+<!--
+  ════════════════════════════════════════════════════════════
+  AR 프로토타입 ① · 노아 소환 (Day 1.9 첫 만남)
+  ────────────────────────────────────────────────────────────
+  스택 : A-Frame 1.3.0 + AR.js 3.4.5 (marker-based)
+  마커 : Hiro 프리셋 (인쇄하거나 다른 화면에 띄워서 카메라로 비춤)
+  모델 : 외부 파일 없이 A-Frame 프리미티브(box/cylinder/sphere)로 조립
+  주의 : 카메라 권한 필요. localhost / https 에서만 작동.
+         (in-scene 한글 텍스트는 기본 폰트 미지원 → 말풍선은 2D DOM으로 처리)
+  ════════════════════════════════════════════════════════════
+-->
+
+<!-- A-Frame -->
+<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<!-- AR.js for A-Frame (Hiro/marker based) -->
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Jua',sans-serif}
+.a-enter-vr,.a-enter-ar{display:none!important}
+
+/* ── 2D UI 오버레이 ── */
+#ui{position:fixed;inset:0;z-index:10;pointer-events:none;color:#fff}
+
+/* 상단 안내 */
+#topbar{
+  position:absolute;top:0;left:0;right:0;
+  background:linear-gradient(180deg,rgba(8,14,30,.9),rgba(8,14,30,0));
+  padding:16px 18px 34px;text-align:center;
+}
+#topbar h1{font-size:1.15rem;color:#60a5fa;text-shadow:0 1px 4px #000;margin-bottom:3px}
+#topbar p{font-size:.82rem;color:#cbd5e1;text-shadow:0 1px 3px #000}
+
+/* 마커 안내 (아직 못 찾음) */
+#seek{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(8,14,30,.82);border:2px solid #3b82f6;border-radius:16px;
+  padding:22px 26px;text-align:center;max-width:300px;
+  transition:opacity .4s;
+}
+#seek .ic{font-size:2.6rem;margin-bottom:8px;animation:pulse 1.6s ease-in-out infinite}
+#seek b{color:#60a5fa}
+#seek .hint{font-size:.8rem;color:#94a3b8;margin-top:10px;line-height:1.5}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.12);opacity:1}}
+
+/* 노아 말풍선 (마커 찾았을 때) */
+#speech{
+  position:absolute;top:78px;left:50%;transform:translateX(-50%) translateY(-12px);
+  background:rgba(15,31,64,.92);border:2px solid #22d3ee;border-radius:18px;
+  padding:14px 22px;max-width:330px;text-align:center;
+  opacity:0;transition:opacity .45s,transform .45s;box-shadow:0 6px 24px rgba(34,211,238,.3);
+}
+#speech.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#speech .who{font-size:.75rem;color:#22d3ee;letter-spacing:.1em;margin-bottom:4px}
+#speech .msg{font-size:1rem;color:#e8faff;line-height:1.6}
+
+/* 하단 컨트롤 */
+#controls{
+  position:absolute;bottom:22px;left:0;right:0;
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:0 16px;
+  pointer-events:auto;
+}
+.btn{
+  font-family:'Jua',sans-serif;border:none;border-radius:24px;cursor:pointer;
+  font-size:.92rem;padding:11px 22px;color:#fff;
+  background:rgba(8,14,30,.8);border:1px solid #475569;backdrop-filter:blur(4px);
+}
+.btn:active{transform:scale(.96)}
+.btn.primary{background:linear-gradient(135deg,#0891b2,#2563eb);border:none}
+
+/* 에러/폴백 */
+#fallback{
+  position:absolute;inset:0;background:#0a0a1a;z-index:20;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:30px;text-align:center;pointer-events:auto;
+}
+#fallback.on{display:flex}
+#fallback .ic{font-size:3rem;margin-bottom:14px}
+#fallback h2{color:#f07caa;font-size:1.3rem;margin-bottom:10px}
+#fallback p{color:#94a3b8;font-size:.95rem;line-height:1.7;max-width:360px;margin-bottom:20px}
+</style>
+</head>
+<body>
+
+<!-- ══════════ AR SCENE ══════════ -->
+<a-scene
+  embedded
+  vr-mode-ui="enabled: false"
+  renderer="logarithmicDepthBuffer: true; colorManagement: true; antialias: true"
+  arjs="sourceType: webcam; detectionMode: mono; debugUIEnabled: false;">
+
+  <!-- Hiro 프리셋 마커 -->
+  <a-marker preset="hiro" id="marker" smooth="true" smoothCount="8" raycaster="objects: .clickable">
+
+    <!-- ─── 노아 로봇 (프리미티브 조립) ─── -->
+    <a-entity id="noah" scale="0.42 0.42 0.42" position="0 0 0"
+      animation="property: rotation; from: 0 -14 0; to: 0 14 0; dir: alternate; loop: true; dur: 3200; easing: easeInOutSine">
+
+      <!-- 호버(둥둥) 래퍼 -->
+      <a-entity
+        animation="property: position; from: 0 0 0; to: 0 0.18 0; dir: alternate; loop: true; dur: 1500; easing: easeInOutSine">
+
+        <!-- 몸통 -->
+        <a-box position="0 0.95 0" width="0.75" height="0.95" depth="0.5"
+          material="color: #e2e8f0; metalness: 0.35; roughness: 0.45"></a-box>
+        <!-- 가슴 코어 (빛나는 하늘색) -->
+        <a-box position="0 1.0 0.26" width="0.22" height="0.22" depth="0.05"
+          material="shader: flat; color: #22d3ee"></a-box>
+
+        <!-- 머리 -->
+        <a-box position="0 1.72 0" width="0.62" height="0.58" depth="0.55"
+          material="color: #eef2f8; metalness: 0.35; roughness: 0.4"></a-box>
+        <!-- 얼굴 스크린 -->
+        <a-plane position="0 1.74 0.29" width="0.5" height="0.34"
+          material="shader: flat; color: #0ea5e9"></a-plane>
+        <!-- 눈 (두 개) -->
+        <a-circle position="-0.12 1.76 0.30" radius="0.055" material="shader: flat; color: #e8faff"></a-circle>
+        <a-circle position=" 0.12 1.76 0.30" radius="0.055" material="shader: flat; color: #e8faff"></a-circle>
+
+        <!-- 안테나 -->
+        <a-cylinder position="0 2.12 0" radius="0.02" height="0.32"
+          material="color: #cbd5e1; metalness: 0.6"></a-cylinder>
+        <a-sphere position="0 2.32 0" radius="0.08" material="shader: flat; color: #22d3ee"
+          animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; loop: true; dur: 700"></a-sphere>
+
+        <!-- 오른팔 (고정) -->
+        <a-box position="0.52 0.95 0" width="0.16" height="0.6" depth="0.16"
+          material="color: #cbd5e1; metalness: 0.5; roughness: 0.4"></a-box>
+
+        <!-- 왼팔 (어깨 피벗에서 손 흔들기) -->
+        <a-entity position="-0.5 1.3 0"
+          animation="property: rotation; from: 0 0 15; to: 0 0 -45; dir: alternate; loop: true; dur: 520; easing: easeInOutSine">
+          <a-box position="0 -0.28 0" width="0.16" height="0.6" depth="0.16"
+            material="color: #cbd5e1; metalness: 0.5; roughness: 0.4"></a-box>
+        </a-entity>
+
+        <!-- 다리 -->
+        <a-box position="-0.19 0.28 0" width="0.2" height="0.55" depth="0.24"
+          material="color: #94a3b8; metalness: 0.4"></a-box>
+        <a-box position=" 0.19 0.28 0" width="0.2" height="0.55" depth="0.24"
+          material="color: #94a3b8; metalness: 0.4"></a-box>
+
+        <!-- 발밑 호버 글로우 -->
+        <a-cylinder position="0 0.03 0" radius="0.5" height="0.04"
+          material="shader: flat; color: #0ea5e9; opacity: 0.35; transparent: true"
+          animation="property: scale; from: 1 1 1; to: 1.25 1 1.25; dir: alternate; loop: true; dur: 1500"></a-cylinder>
+      </a-entity>
+    </a-entity>
+
+    <!-- 마커 위 조명 -->
+    <a-light type="ambient" color="#8899bb" intensity="0.9"></a-light>
+    <a-light type="point" color="#ffffff" intensity="0.9" position="1 3 2"></a-light>
+    <a-light type="point" color="#22d3ee" intensity="0.5" position="0 1 1"></a-light>
+  </a-marker>
+
+  <!-- AR 카메라 -->
+  <a-entity camera></a-entity>
+</a-scene>
+
+
+<!-- ══════════ 2D UI ══════════ -->
+<div id="ui">
+  <div id="topbar">
+    <h1>🤖 AR 노아 소환</h1>
+    <p>Day 1 · 전학생 노아를 우리 교실로 데려오기</p>
+  </div>
+
+  <!-- 노아 말풍선 -->
+  <div id="speech">
+    <div class="who">NOAH</div>
+    <div class="msg" id="speech-msg">안녕! 드디어 만났네.<br>나는 인공지능 로봇 노아야 🤖</div>
+  </div>
+
+  <!-- 마커 탐색 안내 -->
+  <div id="seek">
+    <div class="ic">📷</div>
+    <div><b>Hiro 마커</b>를 카메라로 비춰보세요</div>
+    <div class="hint">마커가 없다면 아래 버튼으로 마커 이미지를 열고,<br>다른 휴대폰·모니터에 띄워 비추면 됩니다.</div>
+  </div>
+
+  <!-- 컨트롤 -->
+  <div id="controls">
+    <button class="btn primary" id="btn-marker">🖨️ Hiro 마커 열기</button>
+    <button class="btn" id="btn-back">← 돌아가기</button>
+  </div>
+</div>
+
+<!-- 폴백 (카메라 불가) -->
+<div id="fallback">
+  <div class="ic">📷🚫</div>
+  <h2>카메라를 사용할 수 없어요</h2>
+  <p>AR 기능은 카메라 권한과 https(또는 localhost) 환경이 필요합니다.
+     권한을 허용했는지 확인하거나, 카메라가 있는 기기에서 다시 열어주세요.</p>
+  <button class="btn primary" onclick="location.href='index.html'">2D 버전으로 돌아가기</button>
+</div>
+
+<script>
+// ── 마커 찾음/잃음 → 말풍선 & 안내 토글 ──
+var marker = document.getElementById('marker');
+var speech = document.getElementById('speech');
+var seek   = document.getElementById('seek');
+
+if (marker) {
+  marker.addEventListener('markerFound', function () {
+    speech.classList.add('on');
+    seek.style.opacity = '0';
+  });
+  marker.addEventListener('markerLost', function () {
+    speech.classList.remove('on');
+    seek.style.opacity = '1';
+  });
+}
+
+// ── Hiro 마커 이미지 새 탭으로 ──
+document.getElementById('btn-marker').addEventListener('click', function () {
+  window.open('https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png', '_blank');
+});
+
+// ── 돌아가기 ──
+document.getElementById('btn-back').addEventListener('click', function () {
+  location.href = 'index.html';
+});
+
+// ── 카메라 접근 실패 감지 → 폴백 표시 ──
+window.addEventListener('camera-error', showFallback);
+window.addEventListener('camera-init-error', showFallback); // AR.js 이벤트명 방어
+function showFallback(){ document.getElementById('fallback').classList.add('on'); }
+
+// getUserMedia 자체가 없거나 거부되면 폴백
+if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+  showFallback();
+} else {
+  // 5초 안에 비디오 트랙이 안 잡히면 폴백 (권한 거부 등)
+  setTimeout(function () {
+    var v = document.querySelector('video');
+    if (!v || !v.srcObject) {
+      // AR.js가 아직 준비 중일 수 있으니 한 번 더 유예
+      setTimeout(function () {
+        var v2 = document.querySelector('video');
+        if (!v2 || !v2.srcObject) showFallback();
+      }, 4000);
+    }
+  }, 5000);
+}
+</script>
+</body>
+</html>
